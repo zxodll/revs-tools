@@ -64,8 +64,6 @@ export interface PresetFile {
   category:
   | "performance"
   | "graphics"
-  | "ui"
-  | "gameplay"
   | "mobile"
   | "desktop";
   difficulty: "safe" | "experimental";
@@ -82,8 +80,6 @@ interface PresetBrowserProps {
 const AVAILABLE_CATEGORIES = [
   { value: "performance", label: "Performance", icon: Cpu },
   { value: "graphics", label: "Graphics", icon: Palette },
-  { value: "ui", label: "User Interface", icon: Monitor },
-  { value: "gameplay", label: "Gameplay", icon: Gamepad2 },
   { value: "mobile", label: "Mobile", icon: Smartphone },
   { value: "desktop", label: "Desktop", icon: Monitor },
 ];
