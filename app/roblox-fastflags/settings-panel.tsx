@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { X, Monitor, Cpu, AlertCircle, Info, RefreshCw, DiscIcon as Display } from "lucide-react"
+import { X, Monitor, Cpu, AlertCircle, Info, RefreshCw, DiscIcon as Display, FileText, Save } from "lucide-react"
 
 interface FastFlagFile {
   id: string
@@ -32,6 +32,23 @@ interface SettingsPanelProps {
   saveFilesToStorage: (files: FastFlagFile[]) => void
   showToast: (title: string, description: string, variant?: "default" | "destructive") => void
 }
+
+interface UserFastFlagSettings {
+  refreshRate: number;
+  logicalProcessors: number;
+  renderResolution: string;
+}
+
+const USER_SETTINGS_KEY = "robloxFastFlagUserSettings";
+
+// Define FastFlags at component scope for reusability
+const REFRESH_RATE_FLAGS = [
+  "FIntTargetRefreshRate",
+  "FIntRefreshRateLowerBound",
+  "DFIntGraphicsOptimizationModeFRMFrameRateTarget",
+];
+const LOGICAL_PROCESSOR_FLAGS = ["DFIntRuntimeConcurrency", "FIntTaskSchedulerAutoThreadLimit"];
+const RENDER_RESOLUTION_FLAGS = ["DFIntDebugDynamicRenderKiloPixels"];
 
 // Resolution mapping for render resolution setting
 const RESOLUTION_OPTIONS = [
@@ -57,16 +74,36 @@ export function SettingsPanel({
   const [refreshRate, setRefreshRate] = useState<number>(60)
   const [detectedRefreshRate, setDetectedRefreshRate] = useState<number | null>(null)
   const [logicalProcessors, setLogicalProcessors] = useState<number>(4)
+  const [detectedLogicalProcessors, setDetectedLogicalProcessors] = useState<number | null>(null);
   const [renderResolution, setRenderResolution] = useState<string>("1080p")
-  const [isApplying, setIsApplying] = useState(false)
-  const [autoDetectHardware, setAutoDetectHardware] = useState(true)
+  const [detectedRenderResolution, setDetectedRenderResolution] = useState<string | null>(null);
+  const [isSavingConfiguration, setIsSavingConfiguration] = useState(false)
   const [affectedFileCount, setAffectedFileCount] = useState<number>(0)
   const [previewChanges, setPreviewChanges] = useState<{ [key: string]: any }>({})
+  const [savedUserSettings, setSavedUserSettings] = useState<UserFastFlagSettings | null>(null);
 
-  // Detect hardware specs on component mount
+  // Load saved settings on mount and handle initial hardware detection
   useEffect(() => {
-    detectHardwareSpecs()
-  }, [])
+    try {
+      const storedSettings = localStorage.getItem(USER_SETTINGS_KEY);
+      if (storedSettings) {
+        const parsedSettings = JSON.parse(storedSettings) as UserFastFlagSettings;
+        setSavedUserSettings(parsedSettings);
+        setRefreshRate(parsedSettings.refreshRate);
+        setLogicalProcessors(parsedSettings.logicalProcessors);
+        setRenderResolution(parsedSettings.renderResolution);
+        showToast("Settings Loaded", "Your saved FastFlag configuration has been loaded.");
+      } else {
+        // No saved settings, perform initial hardware detection
+        detectHardwareSpecs();
+      }
+    } catch (error) {
+      console.error("Error loading saved settings or detecting hardware:", error);
+      showToast("Initialization Error", "Could not load settings or detect hardware. Using defaults.", "destructive");
+      // Fallback to default values if detection also fails or not desired here
+      // For now, detectHardwareSpecs() handles its own errors internally for UI updates.
+    }
+  }, []); // Empty dependency array: runs once on mount
 
   // Update affected file count when files or settings change
   useEffect(() => {
@@ -115,16 +152,12 @@ export function SettingsPanel({
       })
 
       setDetectedRefreshRate(closestRate)
-      if (autoDetectHardware) {
-        setRefreshRate(closestRate)
-      }
+      setRefreshRate(closestRate)
     } catch (error) {
       console.error("Failed to detect refresh rate:", error)
       // Default to 60Hz if detection fails
       setDetectedRefreshRate(60)
-      if (autoDetectHardware) {
-        setRefreshRate(60)
-      }
+      setRefreshRate(60)
     }
 
     // Auto-detect resolution based on screen size
@@ -142,11 +175,33 @@ export function SettingsPanel({
       else if (screenHeight <= 2160) detectedResolution = "4k"
       else detectedResolution = "8k"
 
-      if (autoDetectHardware) {
-        setRenderResolution(detectedResolution)
+      setDetectedRenderResolution(detectedResolution);
+      setRenderResolution(detectedResolution)
+    } catch (error) {
+      setDetectedRenderResolution(null);
+      console.error("Failed to detect resolution:", error)
+    }
+
+    // Auto-detect logical processors
+    try {
+      const numCores = navigator.hardwareConcurrency;
+      if (numCores && numCores > 0) {
+        setDetectedLogicalProcessors(numCores);
+        setLogicalProcessors(numCores);
+      } else {
+        setDetectedLogicalProcessors(null);
+        // If navigator.hardwareConcurrency is not supported or returns an invalid value,
+        // keep the current value (initial default or user-saved).
+        // Log a warning for debugging purposes.
+        console.warn(
+          "Could not detect logical processors or an invalid value was returned. Using current value for logical processors.",
+          `Value received: ${numCores}`
+        );
       }
     } catch (error) {
-      console.error("Failed to detect resolution:", error)
+      setDetectedLogicalProcessors(null);
+      console.error("Error attempting to detect logical processors:", error);
+      // In case of an unexpected error, keep the current value.
     }
   }
 
@@ -155,59 +210,49 @@ export function SettingsPanel({
     let count = 0
     const changes: { [key: string]: any } = {}
 
-    // Define the FastFlags we're looking for
-    const refreshRateFlags = [
-      "FIntTargetRefreshRate",
-      "FIntRefreshRateLowerBound",
-      "DFIntGraphicsOptimizationModeFRMFrameRateTarget",
-    ]
+    // Calculate values as strings from current UI state
+    const currentRefreshRateValue = String(refreshRate)
+    const currentLogicalProcessorsValue = String(Math.max(1, logicalProcessors - 1))
+    const currentRenderResolutionValue =
+      RESOLUTION_OPTIONS.find((opt) => opt.value === renderResolution)?.kiloPixels || "2074"
 
-    const logicalProcessorFlags = ["DFIntRuntimeConcurrency", "FIntTaskSchedulerAutoThreadLimit"]
-    const renderResolutionFlags = ["DFIntDebugDynamicRenderKiloPixels"]
-
-    // Calculate values as strings
-    const refreshRateValue = String(refreshRate)
-    const logicalProcessorsValue = String(Math.max(1, logicalProcessors - 1))
-    const renderResolutionValue = RESOLUTION_OPTIONS.find((opt) => opt.value === renderResolution)?.kiloPixels || "2074"
-
-    // Check each file
     files.forEach((file) => {
       try {
         const content = JSON.parse(file.content)
         let fileAffected = false
 
         // Check for refresh rate flags
-        refreshRateFlags.forEach((flag) => {
-          if (flag in content && content[flag] !== refreshRateValue) {
+        REFRESH_RATE_FLAGS.forEach((flag) => {
+          if (flag in content && content[flag] !== currentRefreshRateValue) {
             fileAffected = true
             if (!changes[file.name]) changes[file.name] = {}
             changes[file.name][flag] = {
               old: content[flag],
-              new: refreshRateValue,
+              new: currentRefreshRateValue,
             }
           }
         })
 
         // Check for logical processor flags
-        logicalProcessorFlags.forEach((flag) => {
-          if (flag in content && content[flag] !== logicalProcessorsValue) {
+        LOGICAL_PROCESSOR_FLAGS.forEach((flag) => {
+          if (flag in content && content[flag] !== currentLogicalProcessorsValue) {
             fileAffected = true
             if (!changes[file.name]) changes[file.name] = {}
             changes[file.name][flag] = {
               old: content[flag],
-              new: logicalProcessorsValue,
+              new: currentLogicalProcessorsValue,
             }
           }
         })
 
         // Check for render resolution flags
-        renderResolutionFlags.forEach((flag) => {
-          if (flag in content && content[flag] !== renderResolutionValue) {
+        RENDER_RESOLUTION_FLAGS.forEach((flag) => {
+          if (flag in content && content[flag] !== currentRenderResolutionValue) {
             fileAffected = true
             if (!changes[file.name]) changes[file.name] = {}
             changes[file.name][flag] = {
               old: content[flag],
-              new: renderResolutionValue,
+              new: currentRenderResolutionValue,
             }
           }
         })
@@ -215,7 +260,7 @@ export function SettingsPanel({
         if (fileAffected) count++
       } catch (error) {
         // Skip invalid JSON files
-        console.error(`Error parsing file ${file.name}:`, error)
+        console.error(`Error parsing file ${file.name} for preview:`, error)
       }
     })
 
@@ -223,89 +268,101 @@ export function SettingsPanel({
     setPreviewChanges(changes)
   }
 
-  // Apply settings to all files
-  const applySettings = () => {
-    setIsApplying(true)
-
+  // Helper function to generate new file content based on settings
+  const generateNewFileContent = (file: FastFlagFile, settings: UserFastFlagSettings): { updatedFile: FastFlagFile | null; changesMade: boolean } => {
     try {
-      // Calculate values as strings
-      const refreshRateValue = String(refreshRate)
-      const logicalProcessorsValue = String(Math.max(1, logicalProcessors - 1))
-      const renderResolutionValue =
-        RESOLUTION_OPTIONS.find((opt) => opt.value === renderResolution)?.kiloPixels || "2074"
+      const content = JSON.parse(file.content);
+      let modified = false;
 
-      // Define the FastFlags we want to modify
-      const refreshRateFlags = [
-        "FIntTargetRefreshRate",
-        "FIntRefreshRateLowerBound",
-        "DFIntGraphicsOptimizationModeFRMFrameRateTarget",
-      ]
+      const targetRefreshRate = String(settings.refreshRate);
+      const targetLogicalProcessors = String(Math.max(1, settings.logicalProcessors - 1));
+      const targetRenderResolution =
+        RESOLUTION_OPTIONS.find((opt) => opt.value === settings.renderResolution)?.kiloPixels || "2074";
 
-      const logicalProcessorFlags = ["DFIntRuntimeConcurrency", "FIntTaskSchedulerAutoThreadLimit"]
-      const renderResolutionFlags = ["DFIntDebugDynamicRenderKiloPixels"]
-
-      // Update each file
-      const updatedFiles = files.map((file) => {
-        try {
-          const content = JSON.parse(file.content)
-          let modified = false
-
-          // Update refresh rate flags (as strings)
-          refreshRateFlags.forEach((flag) => {
-            if (flag in content && content[flag] !== refreshRateValue) {
-              content[flag] = refreshRateValue
-              modified = true
-            }
-          })
-
-          // Update logical processor flags (as strings)
-          logicalProcessorFlags.forEach((flag) => {
-            if (flag in content && content[flag] !== logicalProcessorsValue) {
-              content[flag] = logicalProcessorsValue
-              modified = true
-            }
-          })
-
-          // Update render resolution flags (as strings)
-          renderResolutionFlags.forEach((flag) => {
-            if (flag in content && content[flag] !== renderResolutionValue) {
-              content[flag] = renderResolutionValue
-              modified = true
-            }
-          })
-
-          if (modified) {
-            return {
-              ...file,
-              content: JSON.stringify(content, null, 2),
-              isModified: true,
-              lastModified: new Date(),
-            }
-          }
-
-          return file
-        } catch (error) {
-          // Skip invalid JSON files
-          console.error(`Error updating file ${file.name}:`, error)
-          return file
+      REFRESH_RATE_FLAGS.forEach((flag) => {
+        if (flag in content && content[flag] !== targetRefreshRate) {
+          content[flag] = targetRefreshRate;
+          modified = true;
         }
-      })
+      });
 
-      // Update files in state and storage
-      updateFiles(updatedFiles)
-      saveFilesToStorage(updatedFiles)
+      LOGICAL_PROCESSOR_FLAGS.forEach((flag) => {
+        if (flag in content && content[flag] !== targetLogicalProcessors) {
+          content[flag] = targetLogicalProcessors;
+          modified = true;
+        }
+      });
 
-      showToast("Settings Applied", `Updated ${affectedFileCount} files with new hardware settings.`)
+      RENDER_RESOLUTION_FLAGS.forEach((flag) => {
+        if (flag in content && content[flag] !== targetRenderResolution) {
+          content[flag] = targetRenderResolution;
+          modified = true;
+        }
+      });
 
-      // Close the settings panel
-      onClose()
+      if (modified) {
+        return {
+          updatedFile: {
+            ...file,
+            content: JSON.stringify(content, null, 2),
+            isModified: true,
+            lastModified: new Date(),
+          },
+          changesMade: true,
+        };
+      }
+      return { updatedFile: null, changesMade: false };
     } catch (error) {
-      console.error("Error applying settings:", error)
-      showToast("Error", "Failed to apply settings to all files. Please try again.", "destructive")
-    } finally {
-      setIsApplying(false)
+      console.error(`Error processing file ${file.name} for auto-apply:`, error);
+      return { updatedFile: null, changesMade: false };
     }
-  }
+  };
+
+  // Effect to auto-apply saved settings to files
+  useEffect(() => {
+    if (!savedUserSettings || !files || files.length === 0) {
+      return;
+    }
+
+    let filesWereUpdated = false;
+    const newFilesArray = files.map(file => {
+      const { updatedFile, changesMade } = generateNewFileContent(file, savedUserSettings);
+      if (changesMade && updatedFile) {
+        filesWereUpdated = true;
+        return updatedFile;
+      }
+      return file;
+    });
+
+    if (filesWereUpdated) {
+      updateFiles(newFilesArray);
+      saveFilesToStorage(newFilesArray);
+      showToast("Settings Auto-Applied", "Your saved configuration has been applied to relevant files.");
+    }
+  }, [files, savedUserSettings, updateFiles, saveFilesToStorage, showToast]); // generateNewFileContent is stable if its dependencies are stable
+
+  // Save current UI settings as the persistent configuration
+  const handleSaveConfiguration = () => {
+    setIsSavingConfiguration(true);
+    try {
+      const currentSettings: UserFastFlagSettings = {
+        refreshRate,
+        logicalProcessors,
+        renderResolution,
+      };
+
+      localStorage.setItem(USER_SETTINGS_KEY, JSON.stringify(currentSettings));
+      setSavedUserSettings(currentSettings);
+
+      showToast("Configuration Saved", "Your FastFlag settings have been saved and applied.");
+      // The auto-apply useEffect will handle updating files based on new savedUserSettings
+    } catch (error) {
+      console.error("Error saving configuration:", error);
+      showToast("Error Saving", "Could not save your configuration. Please try again.", "destructive");
+    } finally {
+      setIsSavingConfiguration(false);
+    }
+  };
 
   if (!isOpen) return null
 
@@ -344,16 +401,11 @@ export function SettingsPanel({
 
             <TabsContent value="settings">
               <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Switch id="auto-detect" checked={autoDetectHardware} onCheckedChange={setAutoDetectHardware} />
-                    <Label htmlFor="auto-detect">Auto-detect hardware settings</Label>
-                  </div>
-
+                <div className="flex items-center justify-end">
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                     <Button variant="outline" size="sm" onClick={detectHardwareSpecs} className="flex items-center gap-1">
                       <RefreshCw className="h-3 w-3" />
-                      Refresh
+                      Re-detect Hardware
                     </Button>
                   </motion.div>
                 </div>
@@ -424,6 +476,11 @@ export function SettingsPanel({
                       <div className="grid grid-cols-1 gap-2">
                         <div className="flex items-center justify-between">
                           <Label htmlFor="logical-processors">Logical Processors</Label>
+                          {detectedLogicalProcessors && detectedLogicalProcessors > 0 && (
+                            <Badge variant="outline" className="ml-2">
+                              Detected: {detectedLogicalProcessors}
+                            </Badge>
+                          )}
                         </div>
                         <div className="flex items-center gap-4">
                           <Slider
@@ -468,7 +525,14 @@ export function SettingsPanel({
                   <CardContent>
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 gap-2">
-                        <Label htmlFor="render-resolution">Resolution</Label>
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="render-resolution">Resolution</Label>
+                          {detectedRenderResolution && (
+                            <Badge variant="outline" className="ml-2">
+                              Detected: {detectedRenderResolution}
+                            </Badge>
+                          )}
+                        </div>
                         <Select value={renderResolution} onValueChange={setRenderResolution}>
                           <SelectTrigger>
                             <SelectValue placeholder="Select resolution" />
@@ -522,21 +586,22 @@ export function SettingsPanel({
                   Object.entries(previewChanges).map(([fileName, changes]) => (
                     <Card key={fileName}>
                       <CardHeader className="pb-2">
-                        <CardTitle className="text-base">{fileName}</CardTitle>
+                        <CardTitle className="text-base flex items-center"><FileText className="h-4 w-4 mr-2 text-muted-foreground" />{fileName}</CardTitle>
                       </CardHeader>
                       <CardContent className="pb-2">
-                        <div className="space-y-2">
+                        <div className="divide-y divide-border/60">
                           {Object.entries(changes as Record<string, { old: any; new: any }>).map(([flag, values]) => (
-                            <div key={flag} className="grid grid-cols-3 gap-2 text-sm">
-                              <div className="font-mono">{flag}</div>
-                              <div className="text-muted-foreground">
-                                <span className="font-mono">
-                                  {typeof values.old === "string" ? `"${values.old}"` : values.old}
-                                </span>{" "}
-                                <span className="mx-1">→</span>
-                              </div>
-                              <div className="font-medium">
-                                <span className="font-mono text-green-600 dark:text-green-400">"{values.new}"</span>
+                            <div key={flag} className="py-3 first:pt-0 last:pb-0">
+                              <p className="font-semibold font-mono text-sm mb-1.5 text-foreground">{flag}</p>
+                              <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs ml-1">
+                                <span className="text-muted-foreground font-medium">Old:</span>
+                                <span className="font-mono text-red-600 dark:text-red-500 line-through">
+                                  {typeof values.old === "string" ? `"${values.old}"` : String(values.old === undefined || values.old === null ? "N/A" : values.old)}
+                                </span>
+                                <span className="text-muted-foreground font-medium">New:</span>
+                                <span className="font-mono text-green-600 dark:text-green-400">
+                                  {typeof values.new === "string" ? `"${values.new}"` : String(values.new)}
+                                </span>
                               </div>
                             </div>
                           ))}
@@ -566,8 +631,12 @@ export function SettingsPanel({
             </Button>
           </motion.div>
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <Button onClick={applySettings} disabled={isApplying || affectedFileCount === 0}>
-              {isApplying ? "Applying..." : `Apply to ${affectedFileCount} Files`}
+            <Button onClick={handleSaveConfiguration} disabled={isSavingConfiguration}>
+              {isSavingConfiguration ? (
+                <><RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
+              ) : (
+                <><Save className="mr-2 h-4 w-4" /> Save Configuration</>
+              )}
             </Button>
           </motion.div>
         </div>
