@@ -11,7 +11,7 @@ export default function Home() {
           Rev&apos;s Tools
         </h1>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          A collection of useful tools for developers and content creators
+          for me, myself, and i
         </p>
       </div>
 
