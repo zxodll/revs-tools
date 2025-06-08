@@ -481,10 +481,12 @@ export default function RobloxFastFlags() {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="outline" onClick={() => setShowPresetBrowser(true)}>
-                    <BookOpen className="h-4 w-4 mr-2" />
-                    Presets
-                  </Button>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button variant="outline" onClick={() => setShowPresetBrowser(true)}>
+                      <BookOpen className="h-4 w-4 mr-2" />
+                      Presets
+                    </Button>
+                  </motion.div>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Browse recommended FastFlag presets</p>
@@ -495,10 +497,12 @@ export default function RobloxFastFlags() {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="outline" onClick={() => setShowSettingsPanel(true)}>
-                    <Sliders className="h-4 w-4 mr-2" />
-                    Hardware Settings
-                  </Button>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button variant="outline" onClick={() => setShowSettingsPanel(true)}>
+                      <Sliders className="h-4 w-4 mr-2" />
+                      Hardware Settings
+                    </Button>
+                  </motion.div>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Configure hardware-specific FastFlags</p>
@@ -506,10 +510,12 @@ export default function RobloxFastFlags() {
               </Tooltip>
             </TooltipProvider>
 
-            <Button onClick={() => setShowNewFileDialog(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              New File
-            </Button>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button onClick={() => setShowNewFileDialog(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                New File
+              </Button>
+            </motion.div>
           </div>
         </div>
 
@@ -550,7 +556,7 @@ export default function RobloxFastFlags() {
                   placeholder="Search files..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 transition-all duration-200 focus:border-primary"
                 />
               </div>
             </CardHeader>
@@ -577,28 +583,32 @@ export default function RobloxFastFlags() {
                         <div className="flex items-center gap-1">
                           {file.isModified && <Badge variant="outline">Modified</Badge>}
                           {!file.isValid && <Badge variant="destructive">Invalid</Badge>}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 opacity-0 group-hover:opacity-100"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              exportFile(file)
-                            }}
-                          >
-                            <Download className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 opacity-0 group-hover:opacity-100"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              deleteFile(file.id)
-                            }}
-                          >
-                            <Trash2 className="h-3 w-3 text-destructive" />
-                          </Button>
+                          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                exportFile(file)
+                              }}
+                            >
+                              <Download className="h-3 w-3" />
+                            </Button>
+                          </motion.div>
+                          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                deleteFile(file.id)
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3 text-destructive" />
+                            </Button>
+                          </motion.div>
                         </div>
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">
@@ -642,9 +652,11 @@ export default function RobloxFastFlags() {
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" onClick={() => setShowPreview(!showPreview)}>
-                            {showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </Button>
+                          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                            <Button variant="ghost" size="icon" onClick={() => setShowPreview(!showPreview)}>
+                              {showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </Button>
+                          </motion.div>
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>{showPreview ? "Hide preview" : "Show preview"}</p>
@@ -655,9 +667,11 @@ export default function RobloxFastFlags() {
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" onClick={copyToClipboard}>
-                            <Copy className="h-4 w-4" />
-                          </Button>
+                          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                            <Button variant="ghost" size="icon" onClick={copyToClipboard}>
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                          </motion.div>
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>Copy to clipboard</p>
@@ -668,9 +682,11 @@ export default function RobloxFastFlags() {
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" onClick={formatJson} disabled={!jsonContent}>
-                            <Settings className="h-4 w-4" />
-                          </Button>
+                          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                            <Button variant="ghost" size="icon" onClick={formatJson} disabled={!jsonContent}>
+                              <Settings className="h-4 w-4" />
+                            </Button>
+                          </motion.div>
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>Format JSON</p>
@@ -682,9 +698,11 @@ export default function RobloxFastFlags() {
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={resetCurrentFile}>
-                              <RotateCcw className="h-4 w-4" />
-                            </Button>
+                            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                              <Button variant="ghost" size="icon" onClick={resetCurrentFile}>
+                                <RotateCcw className="h-4 w-4" />
+                              </Button>
+                            </motion.div>
                           </TooltipTrigger>
                           <TooltipContent>
                             <p>Reset changes</p>
@@ -693,10 +711,12 @@ export default function RobloxFastFlags() {
                       </TooltipProvider>
                     )}
 
-                    <Button onClick={saveCurrentFile} disabled={!isEditing || !!validationError}>
-                      <Save className="h-4 w-4 mr-2" />
-                      Save
-                    </Button>
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Button onClick={saveCurrentFile} disabled={!isEditing || !!validationError}>
+                        <Save className="h-4 w-4 mr-2" />
+                        Save
+                      </Button>
+                    </motion.div>
                   </div>
                 )}
               </div>
@@ -730,7 +750,7 @@ export default function RobloxFastFlags() {
                         id="json-editor"
                         value={jsonContent}
                         onChange={(e) => handleContentChange(e.target.value)}
-                        className="font-mono text-sm min-h-[400px] mt-2"
+                        className="font-mono text-sm min-h-[400px] mt-2 transition-all duration-200 focus:border-primary"
                         placeholder="Enter your FastFlag JSON here..."
                       />
                     </div>
@@ -983,9 +1003,11 @@ export default function RobloxFastFlags() {
               >
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold">Create New FastFlag File</h3>
-                  <Button variant="ghost" size="icon" onClick={() => setShowNewFileDialog(false)}>
-                    <X className="h-4 w-4" />
-                  </Button>
+                  <motion.div whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }}>
+                    <Button variant="ghost" size="icon" onClick={() => setShowNewFileDialog(false)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </motion.div>
                 </div>
 
                 <div className="space-y-4">
@@ -996,7 +1018,7 @@ export default function RobloxFastFlags() {
                       value={newFileName}
                       onChange={(e) => setNewFileName(e.target.value)}
                       placeholder="my-fastflags"
-                      className="mt-1"
+                      className="mt-1 transition-all duration-200 focus:border-primary"
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           createNewFile()
@@ -1007,10 +1029,14 @@ export default function RobloxFastFlags() {
                   </div>
 
                   <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setShowNewFileDialog(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={createNewFile}>Create File</Button>
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Button variant="outline" onClick={() => setShowNewFileDialog(false)}>
+                        Cancel
+                      </Button>
+                    </motion.div>
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Button onClick={createNewFile}>Create File</Button>
+                    </motion.div>
                   </div>
                 </div>
               </motion.div>

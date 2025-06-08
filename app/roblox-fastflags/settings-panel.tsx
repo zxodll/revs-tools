@@ -327,9 +327,11 @@ export function SettingsPanel({
         <div className="sticky top-0 bg-background z-10 border-b">
           <div className="flex items-center justify-between p-4">
             <h2 className="text-xl font-semibold">Hardware-Specific FastFlag Settings</h2>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
+            <motion.div whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }}>
+              <Button variant="ghost" size="icon" onClick={onClose}>
+                <X className="h-4 w-4" />
+              </Button>
+            </motion.div>
           </div>
         </div>
 
@@ -348,10 +350,12 @@ export function SettingsPanel({
                     <Label htmlFor="auto-detect">Auto-detect hardware settings</Label>
                   </div>
 
-                  <Button variant="outline" size="sm" onClick={detectHardwareSpecs} className="flex items-center gap-1">
-                    <RefreshCw className="h-3 w-3" />
-                    Refresh
-                  </Button>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button variant="outline" size="sm" onClick={detectHardwareSpecs} className="flex items-center gap-1">
+                      <RefreshCw className="h-3 w-3" />
+                      Refresh
+                    </Button>
+                  </motion.div>
                 </div>
 
                 <Card>
@@ -388,8 +392,8 @@ export function SettingsPanel({
                           <Input
                             type="number"
                             value={refreshRate}
-                            onChange={(e) => setRefreshRate(Number(e.target.value))}
-                            className="w-20"
+                            onChange={(e) => setRefreshRate(parseInt(e.target.value))}
+                            className="w-24 transition-all duration-200 focus:border-primary"
                             min={30}
                             max={360}
                           />
@@ -434,8 +438,8 @@ export function SettingsPanel({
                           <Input
                             type="number"
                             value={logicalProcessors}
-                            onChange={(e) => setLogicalProcessors(Number(e.target.value))}
-                            className="w-20"
+                            onChange={(e) => setLogicalProcessors(parseInt(e.target.value))}
+                            className="w-24 transition-all duration-200 focus:border-primary"
                             min={2}
                             max={64}
                           />
@@ -556,12 +560,16 @@ export function SettingsPanel({
         </div>
 
         <div className="sticky bottom-0 bg-background border-t p-4 flex justify-end gap-2">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button onClick={applySettings} disabled={isApplying || affectedFileCount === 0}>
-            {isApplying ? "Applying..." : `Apply to ${affectedFileCount} Files`}
-          </Button>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+          </motion.div>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Button onClick={applySettings} disabled={isApplying || affectedFileCount === 0}>
+              {isApplying ? "Applying..." : `Apply to ${affectedFileCount} Files`}
+            </Button>
+          </motion.div>
         </div>
       </motion.div>
     </motion.div>

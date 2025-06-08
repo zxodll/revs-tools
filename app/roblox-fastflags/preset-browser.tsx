@@ -2032,9 +2032,11 @@ export function PresetBrowser({
                   system types
                 </p>
               </div>
-              <Button variant="ghost" size="icon" onClick={onClose}>
-                <X className="h-5 w-5" />
-              </Button>
+              <motion.div whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }}>
+                <Button variant="ghost" size="icon" onClick={onClose}>
+                  <X className="h-5 w-5" />
+                </Button>
+              </motion.div>
             </div>
           </div>
 
@@ -2048,7 +2050,7 @@ export function PresetBrowser({
                     placeholder="Search presets by title or description..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 w-full transition-all duration-200 focus:border-primary"
                   />
                 </div>
                 <div className="flex gap-2">
@@ -2075,17 +2077,21 @@ export function PresetBrowser({
                       <SelectItem value="experimental">Experimental</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setSelectedCategory("all");
-                      setSelectedDifficulty("all");
-                      setSearchTerm("");
-                    }}
-                  >
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Reset
-                  </Button>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="w-[100px]">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        setSearchTerm("");
+                        setSelectedCategory("all");
+                        setSelectedDifficulty("all");
+                      }}
+                      disabled={!searchTerm && !selectedCategory}
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Reset
+                    </Button>
+                  </motion.div>
                 </div>
               </div>
 
@@ -2309,7 +2315,6 @@ export function PresetBrowser({
                     </CardContent>
                   </Card>
 
-
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm flex items-center gap-2">
@@ -2353,10 +2358,14 @@ export function PresetBrowser({
               </div>
 
               <DialogFooter>
-                <Button onClick={handleImportPreset}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Import Preset
-                </Button>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button onClick={handleImportPreset}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Import
+                    </Button>
+                  </motion.div>
+                </motion.div>
               </DialogFooter>
             </>
           )}
