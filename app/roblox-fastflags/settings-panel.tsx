@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -81,9 +81,15 @@ export function SettingsPanel({
   const [affectedFileCount, setAffectedFileCount] = useState<number>(0)
   const [previewChanges, setPreviewChanges] = useState<{ [key: string]: any }>({})
   const [savedUserSettings, setSavedUserSettings] = useState<UserFastFlagSettings | null>(null);
+  const initialEffectHasRunRef = useRef(false);
 
   // Load saved settings on mount and handle initial hardware detection
   useEffect(() => {
+    if (initialEffectHasRunRef.current) {
+      return;
+    }
+    initialEffectHasRunRef.current = true;
+
     try {
       const storedSettings = localStorage.getItem(USER_SETTINGS_KEY);
       if (storedSettings) {
@@ -92,7 +98,7 @@ export function SettingsPanel({
         setRefreshRate(parsedSettings.refreshRate);
         setLogicalProcessors(parsedSettings.logicalProcessors);
         setRenderResolution(parsedSettings.renderResolution);
-        showToast("Settings Loaded", "Your saved FastFlag configuration has been loaded.");
+        showToast("Settings Loaded", "Your saved FFs config has been loaded.");
       } else {
         // No saved settings, perform initial hardware detection
         detectHardwareSpecs();
@@ -337,7 +343,7 @@ export function SettingsPanel({
     if (filesWereUpdated) {
       updateFiles(newFilesArray);
       saveFilesToStorage(newFilesArray);
-      showToast("Settings Auto-Applied", "Your saved configuration has been applied to relevant files.");
+      showToast("Settings Auto-Applied", "Your saved config has been applied to some FFs.");
     }
   }, [files, savedUserSettings, updateFiles, saveFilesToStorage, showToast]); // generateNewFileContent is stable if its dependencies are stable
 
@@ -354,11 +360,12 @@ export function SettingsPanel({
       localStorage.setItem(USER_SETTINGS_KEY, JSON.stringify(currentSettings));
       setSavedUserSettings(currentSettings);
 
-      showToast("Configuration Saved", "Your FastFlag settings have been saved and applied.");
+      showToast("Settings Saved", "Your FFs settings have been saved and applied.");
+      onClose(); // Close the panel after successful save
       // The auto-apply useEffect will handle updating files based on new savedUserSettings
     } catch (error) {
       console.error("Error saving configuration:", error);
-      showToast("Error Saving", "Could not save your configuration. Please try again.", "destructive");
+      showToast("Error Saving", "cant save your configuration, mb gng.", "destructive");
     } finally {
       setIsSavingConfiguration(false);
     }
