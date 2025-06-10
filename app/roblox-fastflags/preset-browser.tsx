@@ -97,6 +97,12 @@ const AVAILABLE_CATEGORIES = [
 ]
 
 export function PresetBrowser({ isOpen, onClose, onImport, showToast }: PresetBrowserProps) {
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
   const queryClient = useQueryClient()
 
   const {
@@ -235,7 +241,7 @@ export function PresetBrowser({ isOpen, onClose, onImport, showToast }: PresetBr
     }
   }
 
-  if (!isOpen) return null
+  if (!isMounted || !isOpen) return null
 
   return (
     <>
