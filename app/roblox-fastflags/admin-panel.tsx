@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -59,7 +60,7 @@ interface AdminPanelProps {
   isOpen: boolean
   onClose: () => void
   presets: PresetFile[]
-  onPresetsUpdate: (presets: PresetFile[]) => void
+  onPresetsUpdate: () => void
   showToast: (title: string, description: string, variant?: "default" | "destructive") => void
 }
 
@@ -155,7 +156,8 @@ export function AdminPanel({ isOpen, onClose, presets, onPresetsUpdate, showToas
   // Panel state
   const [selectedPreset, setSelectedPreset] = useState<PresetFile | null>(null)
   const [isEditing, setIsEditing] = useState(false)
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [presetToDelete, setPresetToDelete] = useState<PresetFile | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterCategory, setFilterCategory] = useState<string>("all")
@@ -333,64 +335,102 @@ export function AdminPanel({ isOpen, onClose, presets, onPresetsUpdate, showToas
     return Object.keys(errors).length === 0
   }
 
-  const handleSavePreset = () => {
+  const handleSavePreset = async () => {
+    if (!isAuthenticated) {
+      showToast("Authentication Error", "You must be logged in to save changes.", "destructive")
+      return
+    }
+
     if (!validateForm()) {
       showToast("Validation Error", "Please fix the errors before saving.", "destructive")
       return
     }
 
-    const now = new Date().toISOString()
-    const updatedPresets = [...presets]
+    setIsSubmitting(true)
 
-    if (selectedPreset) {
-      // Update existing preset
-      const index = updatedPresets.findIndex((p) => p.id === selectedPreset.id)
-      if (index !== -1) {
-        updatedPresets[index] = {
-          ...(formData as PresetFile),
-          id: selectedPreset.id,
-          createdAt: selectedPreset.createdAt || now,
-          updatedAt: now,
+    try {
+      if (selectedPreset) {
+        // Update existing preset
+        const response = await fetch(`/api/presets/${selectedPreset.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || "Failed to update preset.")
         }
-        showToast("Preset Updated", `"${formData.title}" has been updated successfully.`)
-      }
-    } else {
-      // Create new preset
-      const newPreset: PresetFile = {
-        ...(formData as PresetFile),
-        id: `preset-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        createdAt: now,
-        updatedAt: now,
-      }
-      updatedPresets.push(newPreset)
-      showToast("Preset Created", `"${formData.title}" has been created successfully.`)
-    }
 
-    onPresetsUpdate(updatedPresets)
-    setIsEditing(false)
-    setSelectedPreset(null)
-    setFormData({
-      title: "",
-      description: "",
-      content: "",
-      category: "performance",
-      difficulty: "safe",
-      compatibility: [],
-    })
+        showToast("Preset Updated", `"${formData.title}" has been updated successfully.`)
+      } else {
+        // Create new preset
+        const response = await fetch("/api/presets", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || "Failed to create preset.")
+        }
+
+        showToast("Preset Created", `"${formData.title}" has been created successfully.`)
+      }
+
+      onPresetsUpdate()
+      setIsEditing(false)
+      setSelectedPreset(null)
+      setFormData({
+        title: "",
+        description: "",
+        content: "",
+        category: "performance",
+        difficulty: "safe",
+        compatibility: [],
+      })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred."
+      showToast("Error", errorMessage, "destructive")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const handleDeletePreset = () => {
+  const handleDeletePreset = async () => {
     if (!presetToDelete) return
 
-    const updatedPresets = presets.filter((p) => p.id !== presetToDelete.id)
-    onPresetsUpdate(updatedPresets)
-    showToast("Preset Deleted", `"${presetToDelete.title}" has been deleted successfully.`)
+    if (!isAuthenticated) {
+      showToast("Authentication Error", "You must be logged in to delete presets.", "destructive")
+      return
+    }
 
-    setShowDeleteDialog(false)
-    setPresetToDelete(null)
-    if (selectedPreset?.id === presetToDelete.id) {
-      setSelectedPreset(null)
-      setIsEditing(false)
+    setIsSubmitting(true)
+    try {
+      const response = await fetch(`/api/presets/${presetToDelete.id}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to delete preset.")
+      }
+
+      showToast("Preset Deleted", `"${presetToDelete.title}" has been deleted.`)
+      onPresetsUpdate()
+
+      if (selectedPreset?.id === presetToDelete.id) {
+        setSelectedPreset(null)
+        setIsEditing(false)
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred."
+      showToast("Error", errorMessage, "destructive")
+    } finally {
+      setShowDeleteDialog(false)
+      setPresetToDelete(null)
+      setIsSubmitting(false)
     }
   }
 
@@ -597,7 +637,7 @@ export function AdminPanel({ isOpen, onClose, presets, onPresetsUpdate, showToas
                                   handleLogin()
                                 }
                               }}
-                              className="pr-10 transition-all duration-200 focus:border-primary"
+                              className="pr-10 text-sm transition-all duration-200 focus:border-primary"
                             />
                             <motion.div
                               whileHover={{ scale: 1.1 }}
@@ -838,9 +878,9 @@ export function AdminPanel({ isOpen, onClose, presets, onPresetsUpdate, showToas
                                   </Button>
                                 </motion.div>
                                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                  <Button size="sm" onClick={handleSavePreset}>
-                                    <Save className="h-4 w-4 mr-2" />
-                                    Save
+                                  <Button size="sm" onClick={handleSavePreset} disabled={isSubmitting}>
+                                    <Save className="mr-2 h-4 w-4" />
+                                    {isSubmitting ? "Saving..." : "Save Preset"}
                                   </Button>
                                 </motion.div>
                               </>
@@ -1153,8 +1193,8 @@ export function AdminPanel({ isOpen, onClose, presets, onPresetsUpdate, showToas
                   </Button>
                 </motion.div>
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button variant="destructive" onClick={handleDeletePreset}>
-                    Delete
+                                    <Button variant="destructive" onClick={handleDeletePreset} disabled={isSubmitting}>
+                    {isSubmitting ? "Deleting..." : "Delete"}
                   </Button>
                 </motion.div>
               </DialogFooter>
