@@ -143,6 +143,12 @@ const listItemVariants = {
 }
 
 export function AdminPanel({ isOpen, onClose, presets, onPresetsUpdate, showToast }: AdminPanelProps) {
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
   // Authentication state
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [password, setPassword] = useState("")
@@ -1131,7 +1137,7 @@ export function AdminPanel({ isOpen, onClose, presets, onPresetsUpdate, showToas
                                           <div>
                                             <Label className="text-sm font-medium">Created</Label>
                                             <p className="text-sm mt-1">
-                                              {new Date(selectedPreset.createdAt).toLocaleString()}
+                                              {isMounted ? new Date(selectedPreset.createdAt).toLocaleString() : "..."}
                                             </p>
                                           </div>
                                         )}
@@ -1139,7 +1145,7 @@ export function AdminPanel({ isOpen, onClose, presets, onPresetsUpdate, showToas
                                           <div>
                                             <Label className="text-sm font-medium">Last Updated</Label>
                                             <p className="text-sm mt-1">
-                                              {new Date(selectedPreset.updatedAt).toLocaleString()}
+                                              {isMounted ? new Date(selectedPreset.updatedAt).toLocaleString() : "..."}
                                             </p>
                                           </div>
                                         )}
