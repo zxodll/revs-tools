@@ -6,16 +6,11 @@ export const preset8: PresetFile = {
     description: "Anti Data sharing, Better WiFi/FPS Optimization, Reduce Latency/Delay/Frames. (change ur hardware settings)",
     content: JSON.stringify(
       {
-        // [ Set the value to ur max Refresh Rate ]
            "FIntTargetRefreshRate": "360",
            "FIntRefreshRateLowerBound": "360",
            "DFIntGraphicsOptimizationModeFRMFrameRateTarget": "360",
-     
-        // [ Set the value to ur Logical Processor -1 ]
            "DFIntRuntimeConcurrency": "23",
            "FIntTaskSchedulerAutoThreadLimit": "23",
-     
-        // [ Render Quality Settings ]
            "DFIntDebugDynamicRenderKiloPixels": "",
      
            "FFlagDebugDisplayFPS": "True",
