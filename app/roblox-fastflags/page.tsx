@@ -37,6 +37,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useDropzone } from "react-dropzone"
 import { SettingsPanel } from "./settings-panel"
 import { PresetBrowser } from "./preset-browser"
+import { PresetFile } from "./types"
 import { useCallback as use } from "react"
 
 // Interface for FastFlag JSON files
@@ -430,7 +431,7 @@ export default function RobloxFastFlags() {
   }
 
   // Handle importing a preset
-  const handleImportPreset = (preset: any) => {
+  const handleImportPreset = (preset: PresetFile) => {
     // Create a unique name to avoid conflicts
     let fileName = `preset-${preset.title.toLowerCase().replace(/\s+/g, "-")}.json`
 
@@ -652,7 +653,7 @@ export default function RobloxFastFlags() {
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                             <Button variant="ghost" size="icon" onClick={() => setShowPreview(!showPreview)}>
                               {showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                             </Button>
@@ -667,7 +668,7 @@ export default function RobloxFastFlags() {
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                             <Button variant="ghost" size="icon" onClick={copyToClipboard}>
                               <Copy className="h-4 w-4" />
                             </Button>
@@ -682,7 +683,7 @@ export default function RobloxFastFlags() {
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                             <Button variant="ghost" size="icon" onClick={formatJson} disabled={!jsonContent}>
                               <Settings className="h-4 w-4" />
                             </Button>
@@ -698,7 +699,7 @@ export default function RobloxFastFlags() {
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                               <Button variant="ghost" size="icon" onClick={resetCurrentFile}>
                                 <RotateCcw className="h-4 w-4" />
                               </Button>

@@ -49,7 +49,7 @@ import { RECOMMENDED_PRESETS } from "./presets";
 interface PresetBrowserProps {
   isOpen: boolean;
   onClose: () => void;
-  onImport: (content: string) => void;
+  onImport: (preset: PresetFile) => void;
 }
 
 const AVAILABLE_CATEGORIES = [
@@ -110,7 +110,7 @@ export function PresetBrowser({
   });
 
   // Sort presets
-      const sortedPresets = [...filteredPresets].sort((a: PresetFile, b: PresetFile) => {
+  const sortedPresets = [...filteredPresets].sort((a: PresetFile, b: PresetFile) => {
     switch (sortBy) {
       case "recommended":
         // Custom order for recommended presets
@@ -145,7 +145,7 @@ export function PresetBrowser({
   // Handle preset import
   const handleImportPreset = () => {
     if (selectedPreset) {
-      onImport(selectedPreset.content);
+      onImport(selectedPreset);
       setShowPresetDetails(false);
       setSelectedPreset(null);
     }
