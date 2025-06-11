@@ -1,6 +1,6 @@
 import { PresetFile } from "../types";
 
-export const preset8: PresetFile = {
+export const preset9: PresetFile = {
   id: "preset-9",
     title: "Rev's Optimal",
     description: "Specific optimization + basic. (change ur hardware settings)",

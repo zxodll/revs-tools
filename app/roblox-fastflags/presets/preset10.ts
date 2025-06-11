@@ -1,6 +1,6 @@
 import { PresetFile } from "../types";
 
-export const preset8: PresetFile = {
+export const preset10: PresetFile = {
   id: "preset-10",
     title: "Rev's Experimental",
     description: "Roblox's new FPS system. (change ur hardware settings)",
