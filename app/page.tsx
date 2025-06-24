@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Card, CardContent } from "@/components/ui/card"
-import { Code, FileArchive, Settings } from "lucide-react"
+import { Code, FileArchive, Settings, Wand2 } from "lucide-react"
 
 export default function Home() {
   return (
@@ -11,11 +11,11 @@ export default function Home() {
           Rev&apos;s Tools
         </h1>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          for me, myself, and i
+          A collection of useful tools for developers and content creators
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -75,6 +75,27 @@ export default function Home() {
             </TooltipTrigger>
             <TooltipContent>
               <p>Manage Roblox FastFlag configurations with a user-friendly JSON editor</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link href="/prompt-refiner" className="block">
+                <Card className="h-full transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20 hover:border-orange-500">
+                  <CardContent className="p-6 flex flex-col items-center justify-center h-full">
+                    <Wand2 size={48} className="mb-4 text-orange-500" />
+                    <h2 className="text-2xl font-semibold mb-2 group-hover:text-orange-500 transition-colors">
+                      Prompt Refiner
+                    </h2>
+                    <p className="text-muted-foreground text-center">
+                      Enhance and refine AI prompts using various language models
+                    </p>
+                  </CardContent>
+                </Card>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Improve your AI prompts with advanced refinement strategies and multiple API providers</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

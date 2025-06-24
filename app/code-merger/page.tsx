@@ -470,6 +470,40 @@ const DraggableFileItem = ({
   )
 }
 
+// Enhanced animation variants to match prompt-refiner
+const pageVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: "easeOut" },
+  },
+}
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.1,
+    },
+  },
+}
+
+const staggerItem = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 30,
+    },
+  },
+}
+
 export default function CodeMerger() {
   const [files, setFiles] = useState<FileItem[]>([])
   const [headerText, setHeaderText] = useState("")
@@ -716,216 +750,323 @@ export default function CodeMerger() {
   return (
     <>
       <Navbar />
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8 text-center">Code Files Merger</h1>
+      <motion.div variants={pageVariants} initial="hidden" animate="visible">
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+          className="container mx-auto px-4 py-8"
+        >
+          <motion.div variants={staggerItem} className="text-center space-y-4 mb-8">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{
+                type: "spring",
+                stiffness: 400,
+                damping: 25,
+                delay: 0.1,
+              }}
+            >
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Code Files Merger
+              </h1>
+            </motion.div>
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="text-lg text-muted-foreground max-w-2xl mx-auto"
+            >
+              Combine multiple code files into a single, well-formatted document for easy sharing and analysis.
+            </motion.p>
+          </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* File Selection Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Select Files</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* Dropzone */}
-              <motion.div
-                whileHover={{ scale: isDragActive ? 1 : 1.01 }}
-                whileTap={{ scale: 0.99 }}
-                {...getRootProps()}
-                className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer mb-4 transition-all duration-300
-                  ${isDragActive ? "border-primary bg-primary/10 scale-102" : "border-border hover:border-primary/50"}`}
-              >
-                <input {...getInputProps()} />
-                <motion.div
-                  animate={{
-                    y: isDragActive ? [0, -10, 0] : 0,
-                    scale: isDragActive ? 1.1 : 1,
-                  }}
-                  transition={{
-                    duration: 0.5,
-                    repeat: isDragActive ? Number.POSITIVE_INFINITY : 0,
-                    repeatType: "reverse",
-                  }}
-                >
-                  <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-2" />
-                </motion.div>
-                <p className="text-lg font-medium">Drag & drop files here</p>
-                <p className="text-sm text-muted-foreground mb-4">or select files using the buttons below</p>
-
-                <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleFileSelect()
-                      }}
+          <motion.div variants={staggerItem} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* File Selection Section */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3, type: "spring", stiffness: 300, damping: 30 }}
+            >
+              <Card className="transition-all duration-300 hover:shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <motion.div
+                      whileHover={{ rotate: 15, scale: 1.1 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 10 }}
                     >
-                      <FileText className="mr-2 h-4 w-4" /> Browse Files
-                    </Button>
-                  </motion.div>
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleFolderSelect()
-                      }}
-                    >
-                      <FolderOpen className="mr-2 h-4 w-4" /> Browse Folder
-                    </Button>
-                  </motion.div>
-                </div>
-              </motion.div>
-
-              {/* Custom Header/Footer */}
-              <div className="space-y-4 mb-4">
-                <div>
-                  <label htmlFor="header" className="block text-sm font-medium mb-1">
-                    Custom Header Text (optional)
-                  </label>
-                  <Textarea
-                    id="header"
-                    placeholder="Text to add at the beginning of the combined file"
-                    value={headerText}
-                    onChange={(e) => setHeaderText(e.target.value)}
-                    rows={3}
-                    className="transition-all duration-200 focus:border-primary"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="footer" className="block text-sm font-medium mb-1">
-                    Custom Footer Text (optional)
-                  </label>
-                  <Textarea
-                    id="footer"
-                    placeholder="Text to add at the end of the combined file"
-                    value={footerText}
-                    onChange={(e) => setFooterText(e.target.value)}
-                    rows={3}
-                    className="transition-all duration-200 focus:border-primary"
-                  />
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-wrap gap-2 justify-end">
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button variant="outline" onClick={clearFiles} disabled={files.length === 0}>
-                    Clear All
-                  </Button>
-                </motion.div>
-                <motion.div
-                  whileHover={{ scale: files.filter((f) => f.checked).length === 0 || isProcessing ? 1 : 1.05 }}
-                  whileTap={{ scale: files.filter((f) => f.checked).length === 0 || isProcessing ? 1 : 0.95 }}
-                >
-                  <Button onClick={processFiles} disabled={files.filter((f) => f.checked).length === 0 || isProcessing}>
-                    Combine Files
-                  </Button>
-                </motion.div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* File List and Output Section */}
-          <div className="space-y-8">
-            {/* File List */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Selected Files ({files.length})</CardTitle>
-                {files.length > 0 && (
-                  <motion.div whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }}>
-                    <Button variant="ghost" size="icon" onClick={clearFiles}>
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </motion.div>
-                )}
-              </CardHeader>
-              <CardContent>
-                {files.length === 0 ? (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-center py-8 text-muted-foreground"
-                  >
-                    No files selected
-                  </motion.div>
-                ) : (
-                  <DndProvider backend={HTML5Backend}>
-                    <div className="max-h-[300px] overflow-y-auto pr-1">
-                      <AnimatePresence>
-                        {files.map((file, index) => (
-                          <DraggableFileItem
-                            key={file.id}
-                            file={file}
-                            index={index}
-                            moveFile={moveFile}
-                            removeFile={removeFile}
-                            toggleFileCheck={toggleFileCheck}
-                          />
-                        ))}
-                      </AnimatePresence>
-                    </div>
-                  </DndProvider>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Output Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Output</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isProcessing ? (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4 py-4">
-                    <p className="text-center text-muted-foreground">Processing files...</p>
-                    <Progress value={progress} className="h-2" />
-                  </motion.div>
-                ) : combinedText ? (
+                      <FileText className="h-5 w-5" />
+                    </motion.div>
+                    Select Files
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {/* Rest of the content remains the same but wrapped in motion.div */}
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    className="space-y-4"
+                    transition={{ delay: 0.4, type: "spring", stiffness: 300, damping: 30 }}
                   >
-                    <div className="flex flex-wrap gap-2">
-                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                        <Button onClick={downloadCombinedText}>
-                          <Download className="mr-2 h-4 w-4" /> Download
-                        </Button>
-                      </motion.div>
-                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                        <Button variant="outline" onClick={copyToClipboard}>
-                          <Copy className="mr-2 h-4 w-4" /> Copy to Clipboard
-                        </Button>
-                      </motion.div>
-                    </div>
-
+                    {/* Existing dropzone content */}
                     <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 }}
-                      className="border rounded-md p-3 bg-muted/30"
+                      whileHover={{ scale: isDragActive ? 1 : 1.01 }}
+                      whileTap={{ scale: 0.99 }}
+                      {...getRootProps()}
+                      className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer mb-4 transition-all duration-300
+                    ${isDragActive ? "border-primary bg-primary/10 scale-102" : "border-border hover:border-primary/50"}`}
                     >
-                      <p className="text-sm text-muted-foreground">
-                        Combined {fileStats.total} files ({fileStats.text} text, {fileStats.binary} binary) •{" "}
-                        {combinedText.length.toLocaleString()} characters
-                      </p>
+                      <input {...getInputProps()} />
+                      <motion.div
+                        animate={{
+                          y: isDragActive ? [0, -10, 0] : 0,
+                          scale: isDragActive ? 1.1 : 1,
+                        }}
+                        transition={{
+                          duration: 0.5,
+                          repeat: isDragActive ? Number.POSITIVE_INFINITY : 0,
+                          repeatType: "reverse",
+                        }}
+                      >
+                        <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-2" />
+                      </motion.div>
+                      <p className="text-lg font-medium">Drag & drop files here</p>
+                      <p className="text-sm text-muted-foreground mb-4">or select files using the buttons below</p>
+
+                      <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleFileSelect()
+                            }}
+                          >
+                            <FileText className="mr-2 h-4 w-4" /> Browse Files
+                          </Button>
+                        </motion.div>
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleFolderSelect()
+                            }}
+                          >
+                            <FolderOpen className="mr-2 h-4 w-4" /> Browse Folder
+                          </Button>
+                        </motion.div>
+                      </div>
+                    </motion.div>
+
+                    {/* Custom Header/Footer section */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.5, type: "spring", stiffness: 300, damping: 30 }}
+                      className="space-y-4 mb-4"
+                    >
+                      <div>
+                        <label htmlFor="header" className="block text-sm font-medium mb-1">
+                          Custom Header Text (optional)
+                        </label>
+                        <motion.div
+                          whileFocus={{ scale: 1.01 }}
+                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        >
+                          <Textarea
+                            id="header"
+                            placeholder="Text to add at the beginning of the combined file"
+                            value={headerText}
+                            onChange={(e) => setHeaderText(e.target.value)}
+                            rows={3}
+                            className="transition-all duration-200 focus:border-primary"
+                          />
+                        </motion.div>
+                      </div>
+
+                      <div>
+                        <label htmlFor="footer" className="block text-sm font-medium mb-1">
+                          Custom Footer Text (optional)
+                        </label>
+                        <motion.div
+                          whileFocus={{ scale: 1.01 }}
+                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        >
+                          <Textarea
+                            id="footer"
+                            placeholder="Text to add at the end of the combined file"
+                            value={footerText}
+                            onChange={(e) => setFooterText(e.target.value)}
+                            rows={3}
+                            className="transition-all duration-200 focus:border-primary"
+                          />
+                        </motion.div>
+                      </div>
+                    </motion.div>
+
+                    {/* Action Buttons */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.6, type: "spring", stiffness: 300, damping: 30 }}
+                      className="flex flex-wrap gap-2 justify-end"
+                    >
+                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                        <Button variant="outline" onClick={clearFiles} disabled={files.length === 0}>
+                          Clear All
+                        </Button>
+                      </motion.div>
+                      <motion.div
+                        whileHover={{ scale: files.filter((f) => f.checked).length === 0 || isProcessing ? 1 : 1.05 }}
+                        whileTap={{ scale: files.filter((f) => f.checked).length === 0 || isProcessing ? 1 : 0.95 }}
+                      >
+                        <Button
+                          onClick={processFiles}
+                          disabled={files.filter((f) => f.checked).length === 0 || isProcessing}
+                        >
+                          Combine Files
+                        </Button>
+                      </motion.div>
                     </motion.div>
                   </motion.div>
-                ) : (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-center py-8 text-muted-foreground"
-                  >
-                    Combine files to see output
-                  </motion.div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* File List and Output Section */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4, type: "spring", stiffness: 300, damping: 30 }}
+              className="space-y-8"
+            >
+              {/* File List */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7, type: "spring", stiffness: 300, damping: 30 }}
+              >
+                <Card className="transition-all duration-300 hover:shadow-lg">
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <motion.div
+                        whileHover={{ rotate: 15, scale: 1.1 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                      >
+                        <FolderOpen className="h-5 w-5" />
+                      </motion.div>
+                      Selected Files ({files.length})
+                    </CardTitle>
+                    {files.length > 0 && (
+                      <motion.div whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }}>
+                        <Button variant="ghost" size="icon" onClick={clearFiles}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </motion.div>
+                    )}
+                  </CardHeader>
+                  <CardContent>
+                    {files.length === 0 ? (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="text-center py-8 text-muted-foreground"
+                      >
+                        No files selected
+                      </motion.div>
+                    ) : (
+                      <DndProvider backend={HTML5Backend}>
+                        <div className="max-h-[300px] overflow-y-auto pr-1">
+                          <AnimatePresence>
+                            {files.map((file, index) => (
+                              <DraggableFileItem
+                                key={file.id}
+                                file={file}
+                                index={index}
+                                moveFile={moveFile}
+                                removeFile={removeFile}
+                                toggleFileCheck={toggleFileCheck}
+                              />
+                            ))}
+                          </AnimatePresence>
+                        </div>
+                      </DndProvider>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Output Section */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8, type: "spring", stiffness: 300, damping: 30 }}
+              >
+                <Card className="transition-all duration-300 hover:shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <motion.div
+                        whileHover={{ rotate: 15, scale: 1.1 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                      >
+                        <Download className="h-5 w-5" />
+                      </motion.div>
+                      Output
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {isProcessing ? (
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4 py-4">
+                        <p className="text-center text-muted-foreground">Processing files...</p>
+                        <Progress value={progress} className="h-2" />
+                      </motion.div>
+                    ) : combinedText ? (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        className="space-y-4"
+                      >
+                        <div className="flex flex-wrap gap-2">
+                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                            <Button onClick={downloadCombinedText}>
+                              <Download className="mr-2 h-4 w-4" /> Download
+                            </Button>
+                          </motion.div>
+                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                            <Button variant="outline" onClick={copyToClipboard}>
+                              <Copy className="mr-2 h-4 w-4" /> Copy to Clipboard
+                            </Button>
+                          </motion.div>
+                        </div>
+
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.2 }}
+                          className="border rounded-md p-3 bg-muted/30"
+                        >
+                          <p className="text-sm text-muted-foreground">
+                            Combined {fileStats.total} files ({fileStats.text} text, {fileStats.binary} binary) •{" "}
+                            {combinedText.length.toLocaleString()} characters
+                          </p>
+                        </motion.div>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="text-center py-8 text-muted-foreground"
+                      >
+                        Combine files to see output
+                      </motion.div>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        </motion.div>
+      </motion.div>
     </>
   )
 }

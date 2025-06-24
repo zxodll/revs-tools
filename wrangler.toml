@@ -1,0 +1,5 @@
+name = "revs-tools"
+compatibility_date = "2024-06-24"
+
+[pages]
+"pages_build_output_dir" = ".vercel/output/static"

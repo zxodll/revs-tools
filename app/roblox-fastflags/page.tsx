@@ -37,7 +37,6 @@ import { useToast } from "@/hooks/use-toast"
 import { useDropzone } from "react-dropzone"
 import { SettingsPanel } from "./settings-panel"
 import { PresetBrowser } from "./preset-browser"
-import { PresetFile } from "./types"
 import { useCallback as use } from "react"
 
 // Interface for FastFlag JSON files
@@ -73,6 +72,40 @@ const DEFAULT_FASTFLAG_TEMPLATE = {
 // Helper function to determine if a string represents a number
 const isNumericString = (value: string): boolean => {
   return !isNaN(Number(value)) && !isNaN(Number.parseFloat(value)) && isFinite(Number(value))
+}
+
+// Enhanced animation variants to match prompt-refiner
+const pageVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: "easeOut" },
+  },
+}
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.1,
+    },
+  },
+}
+
+const staggerItem = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 30,
+    },
+  },
 }
 
 export default function RobloxFastFlags() {
@@ -431,7 +464,7 @@ export default function RobloxFastFlags() {
   }
 
   // Handle importing a preset
-  const handleImportPreset = (preset: PresetFile) => {
+  const handleImportPreset = (preset: any) => {
     // Create a unique name to avoid conflicts
     let fileName = `preset-${preset.title.toLowerCase().replace(/\s+/g, "-")}.json`
 
@@ -469,15 +502,42 @@ export default function RobloxFastFlags() {
   return (
     <>
       <Navbar />
-      <div className="container mx-auto px-4 py-8" {...getRootProps()}>
+
+      <motion.div
+        className="container mx-auto px-4 py-8"
+        {...getRootProps()}
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+      >
         <input {...getInputProps()} />
 
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">Roblox FastFlags Manager</h1>
-            <p className="text-muted-foreground mt-2">Create, edit, and manage Roblox FastFlag JSON files</p>
-          </div>
+        <motion.div variants={staggerItem} className="text-center space-y-4 mb-8">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{
+              type: "spring",
+              stiffness: 400,
+              damping: 25,
+              delay: 0.1,
+            }}
+          >
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-red-600 to-blue-600 bg-clip-text text-transparent">
+              Roblox FastFlags Manager
+            </h1>
+          </motion.div>
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-lg text-muted-foreground max-w-2xl mx-auto"
+          >
+            Create, edit, and manage Roblox FastFlag JSON files with advanced validation and preset management.
+          </motion.p>
+        </motion.div>
 
+        <motion.div variants={staggerItem} className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-2">
             <TooltipProvider>
               <Tooltip>
@@ -518,7 +578,7 @@ export default function RobloxFastFlags() {
               </Button>
             </motion.div>
           </div>
-        </div>
+        </motion.div>
 
         {isDragActive && (
           <motion.div
@@ -533,458 +593,529 @@ export default function RobloxFastFlags() {
           </motion.div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <motion.div variants={staggerItem} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* File List Sidebar */}
-          <Card className="lg:col-span-1">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between mb-2">
-                <CardTitle className="flex items-center gap-2">
-                  <FolderOpen className="h-5 w-5" />
-                  Files ({files.length})
-                </CardTitle>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center space-x-2">
-                    <Switch id="auto-save" checked={autoSave} onCheckedChange={setAutoSave} />
-                    <Label htmlFor="auto-save" className="text-xs">
-                      Auto-save
-                    </Label>
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3, type: "spring", stiffness: 300, damping: 30 }}
+          >
+            <Card className="lg:col-span-1 transition-all duration-300 hover:shadow-lg">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between mb-2">
+                  <CardTitle className="flex items-center gap-2">
+                    <motion.div
+                      whileHover={{ rotate: 15, scale: 1.1 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                    >
+                      <FolderOpen className="h-5 w-5" />
+                    </motion.div>
+                    Files ({files.length})
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center space-x-2">
+                      <Switch id="auto-save" checked={autoSave} onCheckedChange={setAutoSave} />
+                      <Label htmlFor="auto-save" className="text-xs">
+                        Auto-save
+                      </Label>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="relative mt-2">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search files..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 transition-all duration-200 focus:border-primary"
-                />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                <AnimatePresence>
-                  {filteredFiles.map((file) => (
-                    <motion.div
-                      key={file.id}
-                      layout
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className={`p-3 border rounded-md cursor-pointer transition-all duration-200 group
-                        ${selectedFileId === file.id ? "border-primary bg-primary/5" : "hover:border-primary/50"}
-                      `}
-                      onClick={() => selectFile(file.id)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <FileText className="h-4 w-4 flex-shrink-0" />
-                          <span className="font-medium truncate">{file.name}</span>
+                <div className="relative mt-2">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search files..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 transition-all duration-200 focus:border-primary"
+                  />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                  <AnimatePresence>
+                    {filteredFiles.map((file, index) => (
+                      <motion.div
+                        key={file.id}
+                        layout
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{
+                          delay: index * 0.05,
+                          type: "spring",
+                          stiffness: 300,
+                          damping: 30,
+                        }}
+                        className={`p-3 border rounded-md cursor-pointer transition-all duration-200 group
+                      ${selectedFileId === file.id ? "border-primary bg-primary/5" : "hover:border-primary/50"}
+                    `}
+                        onClick={() => selectFile(file.id)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <FileText className="h-4 w-4 flex-shrink-0" />
+                            <span className="font-medium truncate">{file.name}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {file.isModified && <Badge variant="outline">Modified</Badge>}
+                            {!file.isValid && <Badge variant="destructive">Invalid</Badge>}
+                            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  exportFile(file)
+                                }}
+                              >
+                                <Download className="h-3 w-3" />
+                              </Button>
+                            </motion.div>
+                            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  deleteFile(file.id)
+                                }}
+                              >
+                                <Trash2 className="h-3 w-3 text-destructive" />
+                              </Button>
+                            </motion.div>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          {file.isModified && <Badge variant="outline">Modified</Badge>}
-                          {!file.isValid && <Badge variant="destructive">Invalid</Badge>}
-                          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 opacity-0 group-hover:opacity-100"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                exportFile(file)
-                              }}
-                            >
-                              <Download className="h-3 w-3" />
-                            </Button>
-                          </motion.div>
-                          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 opacity-0 group-hover:opacity-100"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                deleteFile(file.id)
-                              }}
-                            >
-                              <Trash2 className="h-3 w-3 text-destructive" />
-                            </Button>
-                          </motion.div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {file.size} bytes • {file.lastModified.toLocaleDateString()}
                         </div>
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {file.size} bytes • {file.lastModified.toLocaleDateString()}
-                      </div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
 
-                {filteredFiles.length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    {searchTerm ? "No files match your search" : "No files yet. Create your first FastFlag file!"}
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                  {filteredFiles.length === 0 && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-center py-8 text-muted-foreground"
+                    >
+                      {searchTerm ? "No files match your search" : "No files yet. Create your first FastFlag file!"}
+                    </motion.div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
 
           {/* Editor Area */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  {selectedFile ? (
-                    <>
-                      <Edit3 className="h-5 w-5" />
-                      {selectedFile.name}
-                      {selectedFile.isModified && <Badge variant="outline">Modified</Badge>}
-                      {!selectedFile.isValid && <Badge variant="destructive">Invalid</Badge>}
-                    </>
-                  ) : (
-                    <>
-                      <FileText className="h-5 w-5" />
-                      No file selected
-                    </>
-                  )}
-                </CardTitle>
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4, type: "spring", stiffness: 300, damping: 30 }}
+            className="lg:col-span-2"
+          >
+            <Card className="transition-all duration-300 hover:shadow-lg">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    {selectedFile ? (
+                      <>
+                        <motion.div
+                          whileHover={{ rotate: 15, scale: 1.1 }}
+                          transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                        >
+                          <Edit3 className="h-5 w-5" />
+                        </motion.div>
+                        {selectedFile.name}
+                        {selectedFile.isModified && <Badge variant="outline">Modified</Badge>}
+                        {!selectedFile.isValid && <Badge variant="destructive">Invalid</Badge>}
+                      </>
+                    ) : (
+                      <>
+                        <motion.div
+                          whileHover={{ rotate: 15, scale: 1.1 }}
+                          transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                        >
+                          <FileText className="h-5 w-5" />
+                        </motion.div>
+                        No file selected
+                      </>
+                    )}
+                  </CardTitle>
 
-                {selectedFile && (
-                  <div className="flex items-center gap-2">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                            <Button variant="ghost" size="icon" onClick={() => setShowPreview(!showPreview)}>
-                              {showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            </Button>
-                          </motion.div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{showPreview ? "Hide preview" : "Show preview"}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                            <Button variant="ghost" size="icon" onClick={copyToClipboard}>
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                          </motion.div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Copy to clipboard</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                            <Button variant="ghost" size="icon" onClick={formatJson} disabled={!jsonContent}>
-                              <Settings className="h-4 w-4" />
-                            </Button>
-                          </motion.div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Format JSON</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-
-                    {isEditing && (
+                  {selectedFile && (
+                    <div className="flex items-center gap-2">
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                              <Button variant="ghost" size="icon" onClick={resetCurrentFile}>
-                                <RotateCcw className="h-4 w-4" />
+                            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                              <Button variant="ghost" size="icon" onClick={() => setShowPreview(!showPreview)}>
+                                {showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                               </Button>
                             </motion.div>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>Reset changes</p>
+                            <p>{showPreview ? "Hide preview" : "Show preview"}</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
+
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                              <Button variant="ghost" size="icon" onClick={copyToClipboard}>
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                            </motion.div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Copy to clipboard</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                              <Button variant="ghost" size="icon" onClick={formatJson} disabled={!jsonContent}>
+                                <Settings className="h-4 w-4" />
+                              </Button>
+                            </motion.div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Format JSON</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+
+                      {isEditing && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                                <Button variant="ghost" size="icon" onClick={resetCurrentFile}>
+                                  <RotateCcw className="h-4 w-4" />
+                                </Button>
+                              </motion.div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Reset changes</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+
+                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                        <Button onClick={saveCurrentFile} disabled={!isEditing || !!validationError}>
+                          <Save className="h-4 w-4 mr-2" />
+                          Save
+                        </Button>
+                      </motion.div>
+                    </div>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                {selectedFile ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5, type: "spring", stiffness: 300, damping: 30 }}
+                    className="space-y-4"
+                  >
+                    {/* Rest of the editor content remains the same */}
+                    {validationError && (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>JSON Validation Error</AlertTitle>
+                        <AlertDescription>{validationError}</AlertDescription>
+                      </Alert>
                     )}
 
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button onClick={saveCurrentFile} disabled={!isEditing || !!validationError}>
-                        <Save className="h-4 w-4 mr-2" />
-                        Save
-                      </Button>
-                    </motion.div>
-                  </div>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              {selectedFile ? (
-                <div className="space-y-4">
-                  {validationError && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertTitle>JSON Validation Error</AlertTitle>
-                      <AlertDescription>{validationError}</AlertDescription>
-                    </Alert>
-                  )}
+                    {!validationError && selectedFile.isValid && (
+                      <Alert>
+                        <CheckCircle className="h-4 w-4" />
+                        <AlertTitle>Valid JSON</AlertTitle>
+                        <AlertDescription>The JSON syntax is valid and ready to use.</AlertDescription>
+                      </Alert>
+                    )}
 
-                  {!validationError && selectedFile.isValid && (
-                    <Alert>
-                      <CheckCircle className="h-4 w-4" />
-                      <AlertTitle>Valid JSON</AlertTitle>
-                      <AlertDescription>The JSON syntax is valid and ready to use.</AlertDescription>
-                    </Alert>
-                  )}
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className={showPreview ? "lg:col-span-1" : "col-span-full"}>
+                        <Label htmlFor="json-editor" className="text-sm font-medium">
+                          JSON Editor
+                        </Label>
+                        <motion.div
+                          whileFocus={{ scale: 1.01 }}
+                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        >
+                          <Textarea
+                            ref={textareaRef}
+                            id="json-editor"
+                            value={jsonContent}
+                            onChange={(e) => handleContentChange(e.target.value)}
+                            className="font-mono text-sm min-h-[400px] mt-2 transition-all duration-200 focus:border-primary"
+                            placeholder="Enter your FastFlag JSON here..."
+                          />
+                        </motion.div>
+                      </div>
 
-                  <div className="grid grid-cols-1 gap-4">
-                    <div className={showPreview ? "lg:col-span-1" : "col-span-full"}>
-                      <Label htmlFor="json-editor" className="text-sm font-medium">
-                        JSON Editor
-                      </Label>
-                      <Textarea
-                        ref={textareaRef}
-                        id="json-editor"
-                        value={jsonContent}
-                        onChange={(e) => handleContentChange(e.target.value)}
-                        className="font-mono text-sm min-h-[400px] mt-2 transition-all duration-200 focus:border-primary"
-                        placeholder="Enter your FastFlag JSON here..."
-                      />
-                    </div>
+                      {showPreview && (
+                        <div className="lg:col-span-1">
+                          <Label className="text-sm font-medium">Preview</Label>
+                          <div className="border rounded-md p-4 bg-muted/30 min-h-[400px] mt-2 overflow-auto">
+                            {/* Preview content remains the same */}
+                            {(() => {
+                              try {
+                                const parsed = JSON.parse(jsonContent)
+                                const entries = Object.entries(parsed)
 
-                    {showPreview && (
-                      <div className="lg:col-span-1">
-                        <Label className="text-sm font-medium">Preview</Label>
-                        <div className="border rounded-md p-4 bg-muted/30 min-h-[400px] mt-2 overflow-auto">
-                          {(() => {
-                            try {
-                              const parsed = JSON.parse(jsonContent)
-                              const entries = Object.entries(parsed)
+                                if (entries.length === 0) {
+                                  return (
+                                    <div className="text-center py-8 text-muted-foreground">
+                                      <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                      <p>No FastFlags found</p>
+                                    </div>
+                                  )
+                                }
 
-                              if (entries.length === 0) {
+                                // Enhanced categorization system
+                                const numberFlags = entries.filter(
+                                  ([_, value]) => typeof value === "string" && isNumericString(value),
+                                )
+                                const stringFlags = entries.filter(
+                                  ([_, value]) => typeof value === "string" && !isNumericString(value),
+                                )
+                                const booleanFlags = entries.filter(([_, value]) => typeof value === "boolean")
+                                const otherFlags = entries.filter(
+                                  ([_, value]) => typeof value !== "string" && typeof value !== "boolean",
+                                )
+
+                                return (
+                                  <div className="space-y-6">
+                                    {/* Number FastFlags (strings containing numbers) */}
+                                    {numberFlags.length > 0 && (
+                                      <div className="space-y-3">
+                                        <div className="flex items-center gap-2">
+                                          <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                                          <h4 className="font-medium text-sm">
+                                            Number FastFlags ({numberFlags.length})
+                                          </h4>
+                                          <Badge variant="outline" className="text-xs">
+                                            Numeric strings
+                                          </Badge>
+                                        </div>
+                                        <div className="space-y-2">
+                                          {numberFlags.map(([key, value]) => (
+                                            <div
+                                              key={key}
+                                              className="group hover:bg-background/50 rounded-md p-2 transition-colors"
+                                            >
+                                              <div className="flex items-center justify-between">
+                                                <span className="font-mono text-sm text-foreground truncate flex-1 mr-2">
+                                                  {key}
+                                                </span>
+                                                <div className="flex items-center gap-2 flex-shrink-0">
+                                                  <Badge
+                                                    variant="outline"
+                                                    className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800"
+                                                  >
+                                                    number
+                                                  </Badge>
+                                                  <span className="font-mono text-sm font-medium text-blue-600 dark:text-blue-400 min-w-0">
+                                                    "{String(value)}"
+                                                  </span>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* String FastFlags */}
+                                    {stringFlags.length > 0 && (
+                                      <div className="space-y-3">
+                                        <div className="flex items-center gap-2">
+                                          <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                                          <h4 className="font-medium text-sm">
+                                            String FastFlags ({stringFlags.length})
+                                          </h4>
+                                          <Badge variant="outline" className="text-xs">
+                                            Text values
+                                          </Badge>
+                                        </div>
+                                        <div className="space-y-2">
+                                          {stringFlags.map(([key, value]) => (
+                                            <div
+                                              key={key}
+                                              className="group hover:bg-background/50 rounded-md p-2 transition-colors"
+                                            >
+                                              <div className="flex items-center justify-between">
+                                                <span className="font-mono text-sm text-foreground truncate flex-1 mr-2">
+                                                  {key}
+                                                </span>
+                                                <div className="flex items-center gap-2 flex-shrink-0">
+                                                  <Badge
+                                                    variant="outline"
+                                                    className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800"
+                                                  >
+                                                    string
+                                                  </Badge>
+                                                  <span className="font-mono text-sm font-medium text-green-600 dark:text-green-400 min-w-0 max-w-[120px] truncate">
+                                                    "{String(value)}"
+                                                  </span>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Boolean FastFlags */}
+                                    {booleanFlags.length > 0 && (
+                                      <div className="space-y-3">
+                                        <div className="flex items-center gap-2">
+                                          <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+                                          <h4 className="font-medium text-sm">
+                                            Boolean FastFlags ({booleanFlags.length})
+                                          </h4>
+                                          <Badge variant="outline" className="text-xs">
+                                            True/false values
+                                          </Badge>
+                                        </div>
+                                        <div className="space-y-2">
+                                          {booleanFlags.map(([key, value]) => (
+                                            <div
+                                              key={key}
+                                              className="group hover:bg-background/50 rounded-md p-2 transition-colors"
+                                            >
+                                              <div className="flex items-center justify-between">
+                                                <span className="font-mono text-sm text-foreground truncate flex-1 mr-2">
+                                                  {key}
+                                                </span>
+                                                <div className="flex items-center gap-2 flex-shrink-0">
+                                                  <Badge
+                                                    variant="outline"
+                                                    className="bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800"
+                                                  >
+                                                    boolean
+                                                  </Badge>
+                                                  <span
+                                                    className={`font-mono text-sm font-medium min-w-0 ${
+                                                      value
+                                                        ? "text-emerald-600 dark:text-emerald-400"
+                                                        : "text-red-600 dark:text-red-400"
+                                                    }`}
+                                                  >
+                                                    {String(value)}
+                                                  </span>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Other FastFlags */}
+                                    {otherFlags.length > 0 && (
+                                      <div className="space-y-3">
+                                        <div className="flex items-center gap-2">
+                                          <div className="w-3 h-3 rounded-full bg-orange-500"></div>
+                                          <h4 className="font-medium text-sm">Other FastFlags ({otherFlags.length})</h4>
+                                          <Badge variant="outline" className="text-xs">
+                                            Complex values
+                                          </Badge>
+                                        </div>
+                                        <div className="space-y-2">
+                                          {otherFlags.map(([key, value]) => (
+                                            <div
+                                              key={key}
+                                              className="group hover:bg-background/50 rounded-md p-2 transition-colors"
+                                            >
+                                              <div className="flex items-center justify-between">
+                                                <span className="font-mono text-sm text-foreground truncate flex-1 mr-2">
+                                                  {key}
+                                                </span>
+                                                <div className="flex items-center gap-2 flex-shrink-0">
+                                                  <Badge
+                                                    variant="outline"
+                                                    className="bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-300 dark:border-orange-800"
+                                                  >
+                                                    {typeof value}
+                                                  </Badge>
+                                                  <span className="font-mono text-sm font-medium text-orange-600 dark:text-orange-400 min-w-0 max-w-[120px] truncate">
+                                                    {JSON.stringify(value)}
+                                                  </span>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Summary */}
+                                    <div className="border-t pt-4 mt-6">
+                                      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                        <span>Total: {entries.length} FastFlags</span>
+                                        {numberFlags.length > 0 && <span>• {numberFlags.length} numbers</span>}
+                                        {stringFlags.length > 0 && <span>• {stringFlags.length} strings</span>}
+                                        {booleanFlags.length > 0 && <span>• {booleanFlags.length} booleans</span>}
+                                        {otherFlags.length > 0 && <span>• {otherFlags.length} other</span>}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )
+                              } catch {
                                 return (
                                   <div className="text-center py-8 text-muted-foreground">
-                                    <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                                    <p>No FastFlags found</p>
+                                    <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                    <p>Invalid JSON - cannot preview</p>
                                   </div>
                                 )
                               }
-
-                              // Enhanced categorization system
-                              const numberFlags = entries.filter(
-                                ([_, value]) => typeof value === "string" && isNumericString(value),
-                              )
-                              const stringFlags = entries.filter(
-                                ([_, value]) => typeof value === "string" && !isNumericString(value),
-                              )
-                              const booleanFlags = entries.filter(([_, value]) => typeof value === "boolean")
-                              const otherFlags = entries.filter(
-                                ([_, value]) => typeof value !== "string" && typeof value !== "boolean",
-                              )
-
-                              return (
-                                <div className="space-y-6">
-                                  {/* Number FastFlags (strings containing numbers) */}
-                                  {numberFlags.length > 0 && (
-                                    <div className="space-y-3">
-                                      <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                                        <h4 className="font-medium text-sm">Number FastFlags ({numberFlags.length})</h4>
-                                        <Badge variant="outline" className="text-xs">
-                                          Numeric strings
-                                        </Badge>
-                                      </div>
-                                      <div className="space-y-2">
-                                        {numberFlags.map(([key, value]) => (
-                                          <div
-                                            key={key}
-                                            className="group hover:bg-background/50 rounded-md p-2 transition-colors"
-                                          >
-                                            <div className="flex items-center justify-between">
-                                              <span className="font-mono text-sm text-foreground truncate flex-1 mr-2">
-                                                {key}
-                                              </span>
-                                              <div className="flex items-center gap-2 flex-shrink-0">
-                                                <Badge
-                                                  variant="outline"
-                                                  className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800"
-                                                >
-                                                  number
-                                                </Badge>
-                                                <span className="font-mono text-sm font-medium text-blue-600 dark:text-blue-400 min-w-0">
-                                                  "{String(value)}"
-                                                </span>
-                                              </div>
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* String FastFlags */}
-                                  {stringFlags.length > 0 && (
-                                    <div className="space-y-3">
-                                      <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                                        <h4 className="font-medium text-sm">String FastFlags ({stringFlags.length})</h4>
-                                        <Badge variant="outline" className="text-xs">
-                                          Text values
-                                        </Badge>
-                                      </div>
-                                      <div className="space-y-2">
-                                        {stringFlags.map(([key, value]) => (
-                                          <div
-                                            key={key}
-                                            className="group hover:bg-background/50 rounded-md p-2 transition-colors"
-                                          >
-                                            <div className="flex items-center justify-between">
-                                              <span className="font-mono text-sm text-foreground truncate flex-1 mr-2">
-                                                {key}
-                                              </span>
-                                              <div className="flex items-center gap-2 flex-shrink-0">
-                                                <Badge
-                                                  variant="outline"
-                                                  className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800"
-                                                >
-                                                  string
-                                                </Badge>
-                                                <span className="font-mono text-sm font-medium text-green-600 dark:text-green-400 min-w-0 max-w-[120px] truncate">
-                                                  "{String(value)}"
-                                                </span>
-                                              </div>
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* Boolean FastFlags */}
-                                  {booleanFlags.length > 0 && (
-                                    <div className="space-y-3">
-                                      <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-                                        <h4 className="font-medium text-sm">
-                                          Boolean FastFlags ({booleanFlags.length})
-                                        </h4>
-                                        <Badge variant="outline" className="text-xs">
-                                          True/false values
-                                        </Badge>
-                                      </div>
-                                      <div className="space-y-2">
-                                        {booleanFlags.map(([key, value]) => (
-                                          <div
-                                            key={key}
-                                            className="group hover:bg-background/50 rounded-md p-2 transition-colors"
-                                          >
-                                            <div className="flex items-center justify-between">
-                                              <span className="font-mono text-sm text-foreground truncate flex-1 mr-2">
-                                                {key}
-                                              </span>
-                                              <div className="flex items-center gap-2 flex-shrink-0">
-                                                <Badge
-                                                  variant="outline"
-                                                  className="bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800"
-                                                >
-                                                  boolean
-                                                </Badge>
-                                                <span
-                                                  className={`font-mono text-sm font-medium min-w-0 ${
-                                                    value
-                                                      ? "text-emerald-600 dark:text-emerald-400"
-                                                      : "text-red-600 dark:text-red-400"
-                                                  }`}
-                                                >
-                                                  {String(value)}
-                                                </span>
-                                              </div>
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* Other FastFlags */}
-                                  {otherFlags.length > 0 && (
-                                    <div className="space-y-3">
-                                      <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-                                        <h4 className="font-medium text-sm">Other FastFlags ({otherFlags.length})</h4>
-                                        <Badge variant="outline" className="text-xs">
-                                          Complex values
-                                        </Badge>
-                                      </div>
-                                      <div className="space-y-2">
-                                        {otherFlags.map(([key, value]) => (
-                                          <div
-                                            key={key}
-                                            className="group hover:bg-background/50 rounded-md p-2 transition-colors"
-                                          >
-                                            <div className="flex items-center justify-between">
-                                              <span className="font-mono text-sm text-foreground truncate flex-1 mr-2">
-                                                {key}
-                                              </span>
-                                              <div className="flex items-center gap-2 flex-shrink-0">
-                                                <Badge
-                                                  variant="outline"
-                                                  className="bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-300 dark:border-orange-800"
-                                                >
-                                                  {typeof value}
-                                                </Badge>
-                                                <span className="font-mono text-sm font-medium text-orange-600 dark:text-orange-400 min-w-0 max-w-[120px] truncate">
-                                                  {JSON.stringify(value)}
-                                                </span>
-                                              </div>
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* Summary */}
-                                  <div className="border-t pt-4 mt-6">
-                                    <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                                      <span>Total: {entries.length} FastFlags</span>
-                                      {numberFlags.length > 0 && <span>• {numberFlags.length} numbers</span>}
-                                      {stringFlags.length > 0 && <span>• {stringFlags.length} strings</span>}
-                                      {booleanFlags.length > 0 && <span>• {booleanFlags.length} booleans</span>}
-                                      {otherFlags.length > 0 && <span>• {otherFlags.length} other</span>}
-                                    </div>
-                                  </div>
-                                </div>
-                              )
-                            } catch {
-                              return (
-                                <div className="text-center py-8 text-muted-foreground">
-                                  <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                                  <p>Invalid JSON - cannot preview</p>
-                                </div>
-                              )
-                            }
-                          })()}
+                            })()}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-16 text-muted-foreground">
-                  <FileText className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                  <h3 className="text-lg font-medium mb-2">No file selected</h3>
-                  <p>Select a file from the sidebar or create a new one to get started.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-center py-16 text-muted-foreground"
+                  >
+                    <motion.div
+                      animate={{
+                        y: [0, -10, 0],
+                        rotate: [0, 5, -5, 0],
+                      }}
+                      transition={{
+                        duration: 3,
+                        repeat: Number.POSITIVE_INFINITY,
+                        ease: "easeInOut",
+                      }}
+                    >
+                      <FileText className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                    </motion.div>
+                    <h3 className="text-lg font-medium mb-2">No file selected</h3>
+                    <p>Select a file from the sidebar or create a new one to get started.</p>
+                  </motion.div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        </motion.div>
 
+        {/* Rest of the dialogs and components remain the same */}
         {/* New File Dialog */}
         <AnimatePresence>
           {showNewFileDialog && (
@@ -1066,10 +1197,11 @@ export default function RobloxFastFlags() {
               isOpen={showPresetBrowser}
               onClose={() => setShowPresetBrowser(false)}
               onImport={handleImportPreset}
+              showToast={showToastWrapper}
             />
           )}
         </AnimatePresence>
-      </div>
+      </motion.div>
     </>
   )
 }
