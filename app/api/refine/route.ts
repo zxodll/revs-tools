@@ -3,6 +3,10 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest, NextResponse } from "next/server";
 
+// --- THIS IS THE FIX ---
+export const runtime = 'edge';
+// ---------------------
+
 // Initialize the Google Generative AI client with the API key from environment variables
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
 
