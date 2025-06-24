@@ -25,8 +25,6 @@ import {
   Copy,
   Trash2,
   Plus,
-  Eye,
-  EyeOff,
   RefreshCw,
   FileText,
   Zap,
@@ -51,7 +49,7 @@ interface PromptHistory {
 
 interface APISettings {
   provider: string
-  apiKey: string
+  apiKey: string // Kept in type for potential future re-integration, but not used.
   model: string
   temperature: number
   maxTokens: number
@@ -68,20 +66,11 @@ interface PromptTemplate {
   category: string
 }
 
-// API Providers Configuration
+// API Providers Configuration - Now only Google Gemini
 const API_PROVIDERS = {
-  openai: {
-    name: "OpenAI",
-    models: ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"],
-    supportsTemperature: true,
-    supportsMaxTokens: true,
-    supportsTopP: true,
-    supportsFrequencyPenalty: true,
-    supportsPresencePenalty: true,
-  },
   google: {
     name: "Google Gemini",
-    models: ["gemini-pro", "gemini-pro-vision"],
+    models: ["gemini-2.5-flash", "gemini-2.5-pro"],
     supportsTemperature: true,
     supportsMaxTokens: true,
     supportsTopP: true,
@@ -93,26 +82,28 @@ const API_PROVIDERS = {
 // Enhancement Strategies
 const ENHANCEMENT_STRATEGIES = [
   {
+    id: "recommended",
+    name: "Recommended",
+    description: "Pretty good refinement for most cases.",
+    icon: Sparkles,
+    prompt:
+      "Fully analyze the intentions of the following prompt I've made. Use everything you know about prompt engineering and my intentions, to improve the prompt to ensure that its output is always high quality and accurately satisfies the prompt's request. Please make sure to keep all the exact precise details of the prompt intact and just improve/perfect it to generate the best possible output. Do not give out 'steps to-dos' or 'what to-dos' inside the prompt and let the AI think for itself. I only want you to refine/improve the grammar and context of the prompt. Make sure to only write the enhanced prompt. My prompt:",
+  },
+  {
     id: "refine",
     name: "Refine",
     description: "Improve clarity and structure",
     icon: Target,
     prompt:
-      "Please refine this prompt to make it clearer, more specific, and better structured while maintaining its original intent:",
-  },
-  {
-    id: "enhance",
-    name: "Enhance",
-    description: "Add detail and context",
-    icon: Sparkles,
-    prompt: "Please enhance this prompt by adding more detail, context, and specificity to make it more effective:",
+      "Please refine this prompt to make it clearer, more specific, and better structured while maintaining its original intent. Make sure to only write the refined prompt. My prompt:",
   },
   {
     id: "concise",
     name: "Make Concise",
     description: "Simplify and shorten",
     icon: Zap,
-    prompt: "Please make this prompt more concise while preserving all essential information and intent:",
+    prompt:
+      "Please make this prompt more concise while preserving all essential information and intent. Make sure to only write the refined prompt. My prompt:",
   },
   {
     id: "creative",
@@ -120,7 +111,7 @@ const ENHANCEMENT_STRATEGIES = [
     description: "Add creativity and flair",
     icon: Lightbulb,
     prompt:
-      "Please enhance this prompt to be more creative, engaging, and inspiring while maintaining its core purpose:",
+      "Please enhance this prompt to be more creative, engaging, and inspiring while maintaining its core purpose. Make sure to only write the refined prompt. My prompt:",
   },
   {
     id: "professional",
@@ -128,7 +119,7 @@ const ENHANCEMENT_STRATEGIES = [
     description: "Make more formal and professional",
     icon: Brain,
     prompt:
-      "Please refine this prompt to be more professional, formal, and suitable for business or academic contexts:",
+      "Please refine this prompt to be more professional, formal, and suitable for business or academic contexts. Make sure to only write the refined prompt. My prompt:",
   },
 ]
 
@@ -173,71 +164,69 @@ export default function PromptRefinerPage() {
   const [inputPrompt, setInputPrompt] = useState("")
   const [outputPrompt, setOutputPrompt] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
-  const [showApiKey, setShowApiKey] = useState(false)
   const [history, setHistory] = useState<PromptHistory[]>([])
+  const [templates, setTemplates] = useState<PromptTemplate[]>(DEFAULT_TEMPLATES)
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("")
+  const [customStrategy, setCustomStrategy] = useState("")
+  const [showCustomStrategy, setShowCustomStrategy] = useState(false)
+
+  // API Settings - Defaulted to Google Gemini
   const [settings, setSettings] = useState<APISettings>({
     provider: "google",
-    apiKey: "",
-    model: "flash",
+    apiKey: "", // No longer used
+    model: "gemini-1.5-flash",
     temperature: 0.7,
-    maxTokens: 2048,
-    topP: 1,
+    maxTokens: 1000,
+    topP: 1.0,
     frequencyPenalty: 0,
     presencePenalty: 0,
   })
-  const [activeStrategy, setActiveStrategy] = useState<string>("refine")
 
   const { toast } = useToast()
 
-  const { completion, input, handleInputChange, handleSubmit, isLoading, setInput } = useCompletion({
-    api: '/api/prompt-refiner',
-    body: {
-      model: settings.model,
-    },
-    onFinish: (prompt, completion) => {
-      const newHistoryItem: PromptHistory = {
-        id: Date.now().toString(),
-        timestamp: new Date(),
-        input: prompt,
-        output: completion,
-        provider: settings.provider,
-        model: settings.model,
-        strategy: activeStrategy,
-        settings: settings,
-      };
-      const newHistory = [newHistoryItem, ...history];
-      setHistory(newHistory);
-      saveHistory(newHistory);
-    }
-  });
-
-  // Load settings and history from localStorage on mount
+  // Load data from localStorage on mount
   useEffect(() => {
-    const savedSettings = localStorage.getItem("promptRefinerSettings")
+    const savedSettings = localStorage.getItem("prompt-refiner-settings")
+    const savedHistory = localStorage.getItem("prompt-refiner-history")
+    const savedTemplates = localStorage.getItem("prompt-refiner-templates")
+
     if (savedSettings) {
-      setSettings(JSON.parse(savedSettings))
+      const parsedSettings = JSON.parse(savedSettings)
+      // Ensure provider is always google after removing OpenAI
+      parsedSettings.provider = "google"
+      setSettings(parsedSettings)
     }
-    const savedHistory = localStorage.getItem("promptRefinerHistory")
     if (savedHistory) {
-      setHistory(JSON.parse(savedHistory).map((item: any) => ({ ...item, timestamp: new Date(item.timestamp) })))
+      setHistory(
+        JSON.parse(savedHistory).map((h: any) => ({
+          ...h,
+          timestamp: new Date(h.timestamp),
+        })),
+      )
+    }
+    if (savedTemplates) {
+      setTemplates(JSON.parse(savedTemplates))
     }
   }, [])
 
-  // Process prompt with AI
+  // Save settings to localStorage
+  const saveSettings = (newSettings: APISettings) => {
+    setSettings(newSettings)
+    localStorage.setItem("prompt-refiner-settings", JSON.stringify(newSettings))
+  }
+
+  // Save history to localStorage
+  const saveHistory = (newHistory: PromptHistory[]) => {
+    setHistory(newHistory)
+    localStorage.setItem("prompt-refiner-history", JSON.stringify(newHistory))
+  }
+
+  // Process prompt with AI - Simplified for Google Gemini only
   const processPrompt = async (strategy: string, customPrompt?: string) => {
     if (!inputPrompt.trim()) {
       toast({
         title: "Error",
         description: "Please enter a prompt to refine.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (!settings.apiKey) {
-      toast({
-        title: "Error",
-        description: "Please enter your API key in settings.",
         variant: "destructive",
       })
       return
@@ -250,35 +239,51 @@ export default function PromptRefinerPage() {
       const strategyConfig = ENHANCEMENT_STRATEGIES.find((s) => s.id === strategy)
       const systemPrompt = customPrompt || strategyConfig?.prompt || "Please improve this prompt:"
 
-      // Simulate API call (replace with actual API integration)
-      const response = await simulateAPICall(systemPrompt, inputPrompt, settings)
+      const response = await fetch("/api/refine", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          systemPrompt,
+          userPrompt: inputPrompt,
+          settings: { model: settings.model }, // Send relevant settings
+        }),
+      })
 
-      setOutputPrompt(response)
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "An unknown error occurred")
+      }
 
-      // Add to history
+      const data = await response.json()
+      const responseText = data.refinedPrompt
+
+      setOutputPrompt(responseText)
+
       const historyItem: PromptHistory = {
         id: Date.now().toString(),
         timestamp: new Date(),
         input: inputPrompt,
-        output: response,
+        output: responseText,
         provider: settings.provider,
         model: settings.model,
         strategy: strategyConfig?.name || "Custom",
         settings: { ...settings },
       }
 
-      const newHistory = [historyItem, ...history].slice(0, 50) // Keep last 50 items
+      const newHistory = [historyItem, ...history].slice(0, 50)
       saveHistory(newHistory)
 
       toast({
         title: "Success",
         description: "Prompt processed successfully!",
       })
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error processing prompt:", error)
       toast({
         title: "Error",
-        description: "Failed to process prompt. Please check your API key and try again.",
+        description: error.message || "Failed to process prompt. Please check your setup and try again.",
         variant: "destructive",
       })
     } finally {
@@ -286,33 +291,12 @@ export default function PromptRefinerPage() {
     }
   }
 
-  // Simulate API call (replace with actual implementation)
-  const simulateAPICall = async (systemPrompt: string, userPrompt: string, settings: APISettings): Promise<string> => {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-
-    // Return a mock enhanced prompt
-    return `Enhanced version of your prompt:
-
-${userPrompt}
-
-[This is a simulated response. In the actual implementation, this would be replaced with real API calls to ${settings.provider} using the ${settings.model} model with temperature ${settings.temperature}.]
-
-The enhanced prompt includes:
-- Improved clarity and structure
-- More specific instructions
-- Better context and examples
-- Optimized for AI understanding
-
-Remember to replace this simulation with actual API integration using the AI SDK.`
-  }
-
   // Apply template
   const applyTemplate = (templateId: string) => {
-    const template = DEFAULT_TEMPLATES.find((t) => t.id === templateId)
+    const template = templates.find((t) => t.id === templateId)
     if (template) {
-      setInput(template.template)
-      toast({ title: "Template Applied", description: `Applied the "${template.name}" template.` })
+      setInputPrompt(template.template)
+      setSelectedTemplate(templateId)
     }
   }
 
@@ -328,21 +312,27 @@ Remember to replace this simulation with actual API integration using the AI SDK
 
   // Export functionality
   const exportPrompt = (format: "txt" | "json") => {
-    if (!completion) return
+    if (!outputPrompt) return
 
-    const historyItem = history.find((item) => item.output === completion)
-    const blob = new Blob(
-      [
-        format === "json"
-          ? JSON.stringify(historyItem, null, 2)
-          : `Input:\n${historyItem?.input}\n\nOutput:\n${historyItem?.output}`,
-      ],
-      { type: format === "json" ? "application/json" : "text/plain" }
-    )
+    const data =
+      format === "json"
+        ? JSON.stringify(
+            {
+              input: inputPrompt,
+              output: outputPrompt,
+              settings,
+              timestamp: new Date().toISOString(),
+            },
+            null,
+            2,
+          )
+        : outputPrompt
+
+    const blob = new Blob([data], { type: format === "json" ? "application/json" : "text/plain" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `prompt_${historyItem?.id}.${format}`
+    a.download = `refined-prompt.${format}`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -352,14 +342,14 @@ Remember to replace this simulation with actual API integration using the AI SDK
   // Clear history
   const clearHistory = () => {
     setHistory([])
-    localStorage.removeItem("promptRefinerHistory")
+    localStorage.removeItem("prompt-refiner-history")
     toast({
       title: "History Cleared",
       description: "All prompt history has been cleared.",
     })
   }
 
-  const currentProvider = API_PROVIDERS[settings.provider as keyof typeof API_PROVIDERS]
+  const currentProvider = API_PROVIDERS.google
 
   return (
     <>
@@ -418,7 +408,7 @@ Remember to replace this simulation with actual API integration using the AI SDK
                       <CardTitle className="flex items-center gap-2">
                         <motion.div
                           whileHover={{ rotate: 15, scale: 1.1 }}
-                          transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                          transition={{ duration: 0.15, ease: "easeOut" }}
                         >
                           <FileText className="h-5 w-5" />
                         </motion.div>
@@ -427,7 +417,11 @@ Remember to replace this simulation with actual API integration using the AI SDK
                       <div className="flex gap-2">
                         <Dialog>
                           <DialogTrigger asChild>
-                            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                            <motion.div
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              transition={{ duration: 0.1 }}
+                            >
                               <Button variant="outline" size="sm">
                                 <Plus className="h-4 w-4 mr-1" />
                                 Templates
@@ -441,7 +435,7 @@ Remember to replace this simulation with actual API integration using the AI SDK
                             <ScrollArea className="h-96">
                               <div className="space-y-4">
                                 <AnimatePresence>
-                                  {DEFAULT_TEMPLATES.map((template, index) => (
+                                  {templates.map((template, index) => (
                                     <motion.div
                                       key={template.id}
                                       initial={{ opacity: 0, y: 20 }}
@@ -496,14 +490,12 @@ Remember to replace this simulation with actual API integration using the AI SDK
                       whileFocus={{ scale: 1.01 }}
                       transition={{ type: "spring", stiffness: 300, damping: 30 }}
                     >
-                      <form onSubmit={handleSubmit}>
-                        <Textarea
-                          placeholder="Enter your prompt here..."
-                          className="h-48 text-base resize-none transition-all duration-200 focus:border-primary"
-                          value={input}
-                          onChange={handleInputChange}
-                        />
-                      </form>
+                      <Textarea
+                        placeholder="Enter your prompt here to refine or enhance it..."
+                        value={inputPrompt}
+                        onChange={(e) => setInputPrompt(e.target.value)}
+                        className="min-h-[200px] resize-none transition-all duration-200 focus:border-primary"
+                      />
                     </motion.div>
                     <motion.div
                       initial={{ opacity: 0 }}
@@ -512,13 +504,26 @@ Remember to replace this simulation with actual API integration using the AI SDK
                       className="flex justify-between items-center mt-2 text-sm text-muted-foreground"
                     >
                       <motion.span
-                        key={input.length}
+                        key={inputPrompt.length}
                         initial={{ scale: 1.2, color: "#3b82f6" }}
                         animate={{ scale: 1, color: "inherit" }}
                         transition={{ duration: 0.2 }}
                       >
-                        {input.length} characters
+                        {inputPrompt.length} characters
                       </motion.span>
+                      <AnimatePresence>
+                        {selectedTemplate && (
+                          <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 20 }}
+                          >
+                            <Badge variant="outline">
+                              Template: {templates.find((t) => t.id === selectedTemplate)?.name}
+                            </Badge>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </motion.div>
                   </CardContent>
                 </Card>
@@ -535,7 +540,7 @@ Remember to replace this simulation with actual API integration using the AI SDK
                     <CardTitle className="flex items-center gap-2">
                       <motion.div
                         whileHover={{ rotate: 15, scale: 1.1 }}
-                        transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                        transition={{ duration: 0.15, ease: "easeOut" }}
                       >
                         <Wand2 className="h-5 w-5" />
                       </motion.div>
@@ -550,24 +555,19 @@ Remember to replace this simulation with actual API integration using the AI SDK
                             key={strategy.id}
                             initial={{ opacity: 0, y: 20, scale: 0.9 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
-                            transition={{
-                              delay: 0.6 + index * 0.1,
-                              type: "spring",
-                              stiffness: 300,
-                              damping: 30,
-                            }}
                             whileHover={{
                               scale: 1.05,
                               y: -5,
                               boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
                             }}
                             whileTap={{ scale: 0.95 }}
+                            transition={{ duration: 0.15, ease: "easeOut" }}
                           >
                             <Button
                               variant="outline"
                               className="w-full h-auto p-4 flex flex-col items-center gap-2 transition-all duration-200"
-                              onClick={() => setActiveStrategy(strategy.id)}
-                              disabled={isLoading}
+                              onClick={() => processPrompt(strategy.id)}
+                              disabled={isProcessing}
                             >
                               <motion.div
                                 whileHover={{ rotate: 10, scale: 1.2 }}
@@ -584,6 +584,60 @@ Remember to replace this simulation with actual API integration using the AI SDK
                         ))}
                       </AnimatePresence>
                     </div>
+
+                    <Separator className="my-4" />
+
+                    {/* Custom Strategy */}
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.8 }}
+                      className="space-y-3"
+                    >
+                      <div className="flex items-center gap-2">
+                        <motion.div whileTap={{ scale: 0.9 }}>
+                          <Switch checked={showCustomStrategy} onCheckedChange={setShowCustomStrategy} />
+                        </motion.div>
+                        <Label>Custom Enhancement Strategy</Label>
+                      </div>
+
+                      <AnimatePresence>
+                        {showCustomStrategy && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0, y: -10 }}
+                            animate={{ opacity: 1, height: "auto", y: 0 }}
+                            exit={{ opacity: 0, height: 0, y: -10 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                            className="space-y-3"
+                          >
+                            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} transition={{ delay: 0.1 }}>
+                              <Textarea
+                                placeholder="Describe how you want to enhance your prompt..."
+                                value={customStrategy}
+                                onChange={(e) => setCustomStrategy(e.target.value)}
+                                className="min-h-[100px] transition-all duration-200 focus:border-primary"
+                              />
+                            </motion.div>
+                            <motion.div
+                              initial={{ scale: 0.95 }}
+                              animate={{ scale: 1 }}
+                              transition={{ delay: 0.2 }}
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              <Button
+                                onClick={() => processPrompt("custom", customStrategy)}
+                                disabled={isProcessing || !customStrategy.trim()}
+                                className="w-full"
+                              >
+                                <Sparkles className="h-4 w-4 mr-2" />
+                                Apply Custom Strategy
+                              </Button>
+                            </motion.div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -599,31 +653,80 @@ Remember to replace this simulation with actual API integration using the AI SDK
                     <div className="flex items-center justify-between">
                       <CardTitle className="flex items-center gap-2">
                         <motion.div
-                          whileHover={{ rotate: -15, scale: 1.1 }}
-                          transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                          whileHover={{ rotate: 15, scale: 1.1 }}
+                          transition={{ duration: 0.15, ease: "easeOut" }}
                         >
                           <Sparkles className="h-5 w-5" />
                         </motion.div>
-                        Refined Output
+                        Enhanced Prompt
                       </CardTitle>
-                      <div className="flex gap-2">
-                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => copyToClipboard(completion)}
-                            disabled={!completion || isLoading}
+                      <AnimatePresence>
+                        {outputPrompt && (
+                          <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 20 }}
+                            className="flex gap-2"
                           >
-                            <Copy className="h-4 w-4 mr-1" />
-                            Copy
-                          </Button>
+                            <motion.div
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              transition={{ duration: 0.1 }}
+                            >
+                              <Button variant="outline" size="sm" onClick={() => copyToClipboard(outputPrompt)}>
+                                <Copy className="h-4 w-4 mr-1" />
+                                Copy
+                              </Button>
+                            </motion.div>
+                            <motion.div
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              transition={{ duration: 0.1 }}
+                            >
+                              <Button variant="outline" size="sm" onClick={() => exportPrompt("txt")}>
+                                <Download className="h-4 w-4 mr-1" />
+                                Export
+                              </Button>
+                            </motion.div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <AnimatePresence mode="wait">
+                      {isProcessing ? (
+                        <motion.div
+                          key="processing"
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          className="flex items-center justify-center py-12"
+                        >
+                          <div className="text-center space-y-4">
+                            <motion.div
+                              animate={{ rotate: 360 }}
+                              transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                            >
+                              <RefreshCw className="h-8 w-8 mx-auto text-primary" />
+                            </motion.div>
+                            <motion.p
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ delay: 0.2 }}
+                              className="text-muted-foreground"
+                            >
+                              Processing your prompt...
+                            </motion.p>
+                          </div>
                         </motion.div>
-                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => exportPrompt("txt")}
-                            disabled={!completion || isLoading}
+                      ) : outputPrompt ? (
+                        <motion.div
+                          key="output"
+                          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                          className="space-y-4"
                         >
                           <motion.div
                             initial={{ opacity: 0, y: 10 }}
@@ -719,65 +822,7 @@ Remember to replace this simulation with actual API integration using the AI SDK
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {/* API Provider */}
-                    <motion.div
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.8 }}
-                      className="space-y-2"
-                    >
-                      <Label>API Provider</Label>
-                      <Select
-                        value={settings.provider}
-                        onValueChange={(value) =>
-                          saveSettings({
-                            ...settings,
-                            provider: value,
-                            model: API_PROVIDERS[value as keyof typeof API_PROVIDERS].models[0],
-                          })
-                        }
-                      >
-                        <SelectTrigger className="transition-all duration-200 hover:border-primary">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(API_PROVIDERS).map(([key, provider]) => (
-                            <SelectItem key={key} value={key}>
-                              {provider.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </motion.div>
-
-                    {/* API Key */}
-                    <motion.div
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.85 }}
-                      className="space-y-2"
-                    >
-                      <Label>API Key</Label>
-                      <div className="relative">
-                        <Input
-                          type={showApiKey ? "text" : "password"}
-                          placeholder="Enter your API key"
-                          value={settings.apiKey}
-                          onChange={(e) => saveSettings({ ...settings, apiKey: e.target.value })}
-                          className="transition-all duration-200 focus:border-primary"
-                        />
-                        <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-0 top-0 h-full px-3"
-                            onClick={() => setShowApiKey(!showApiKey)}
-                          >
-                            {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </Button>
-                        </motion.div>
-                      </div>
-                    </motion.div>
+                    {/* API Provider and Key sections are now removed */}
 
                     {/* Model Selection */}
                     <motion.div
@@ -786,7 +831,7 @@ Remember to replace this simulation with actual API integration using the AI SDK
                       transition={{ delay: 0.9 }}
                       className="space-y-2"
                     >
-                      <Label>Model</Label>
+                      <Label>Model (Google Gemini)</Label>
                       <Select
                         value={settings.model}
                         onValueChange={(value) => saveSettings({ ...settings, model: value })}
@@ -851,7 +896,7 @@ Remember to replace this simulation with actual API integration using the AI SDK
                             saveSettings({ ...settings, maxTokens: Number.parseInt(e.target.value) || 1000 })
                           }
                           min={1}
-                          max={4000}
+                          max={8192} // Updated max for Gemini models
                           className="transition-all duration-200 focus:border-primary"
                         />
                       </motion.div>
@@ -893,6 +938,7 @@ Remember to replace this simulation with actual API integration using the AI SDK
                       </motion.div>
                     )}
 
+                    {/* Frequency and Presence Penalty sliders are dynamically hidden since Gemini doesn't support them */}
                     {currentProvider.supportsFrequencyPenalty && (
                       <motion.div
                         initial={{ opacity: 0, x: -10 }}
@@ -968,7 +1014,7 @@ Remember to replace this simulation with actual API integration using the AI SDK
                       <CardTitle className="flex items-center gap-2">
                         <motion.div
                           whileHover={{ rotate: 15, scale: 1.1 }}
-                          transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                          transition={{ duration: 0.15, ease: "easeOut" }}
                         >
                           <History className="h-5 w-5" />
                         </motion.div>
@@ -982,6 +1028,7 @@ Remember to replace this simulation with actual API integration using the AI SDK
                             exit={{ opacity: 0, scale: 0.8 }}
                             whileHover={{ scale: 1.1, rotate: 5 }}
                             whileTap={{ scale: 0.9 }}
+                            transition={{ duration: 0.1 }}
                           >
                             <Button variant="ghost" size="sm" onClick={clearHistory}>
                               <Trash2 className="h-4 w-4" />
@@ -1035,9 +1082,11 @@ Remember to replace this simulation with actual API integration using the AI SDK
                                   boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
                                 }}
                                 whileTap={{ scale: 0.98 }}
+                                transition={{ duration: 0.1, ease: "easeOut" }}
                                 className="p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-all duration-200"
                                 onClick={() => {
-                                  setInput(item.input)
+                                  setInputPrompt(item.input)
+                                  setOutputPrompt(item.output)
                                 }}
                               >
                                 <motion.div
