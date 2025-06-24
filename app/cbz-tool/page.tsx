@@ -213,7 +213,7 @@ export default function CBZTool() {
             transition={{ delay: 0.2 }}
             className="text-lg text-muted-foreground max-w-2xl mx-auto"
           >
-            Transform your image collections into professional CBZ comic book archives with ease.
+            stuff i need.
           </motion.p>
         </motion.div>
 

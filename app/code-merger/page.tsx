@@ -778,7 +778,7 @@ export default function CodeMerger() {
               transition={{ delay: 0.2 }}
               className="text-lg text-muted-foreground max-w-2xl mx-auto"
             >
-              Combine multiple code files into a single, well-formatted document for easy sharing and analysis.
+              combine code files/folder into a single context text. useful for AI to understand your code structure (if a lots of files or a folder).
             </motion.p>
           </motion.div>
 

@@ -11,7 +11,7 @@ export default function Home() {
           Rev&apos;s Tools
         </h1>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          A collection of useful tools for developers and content creators
+          for me, myself, and i
         </p>
       </div>
 
@@ -74,7 +74,7 @@ export default function Home() {
               </Link>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Manage Roblox FastFlag configurations with a user-friendly JSON editor</p>
+              <p>Manage Roblox FastFlag configurations</p>
             </TooltipContent>
           </Tooltip>
 
@@ -95,7 +95,7 @@ export default function Home() {
               </Link>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Improve your AI prompts with advanced refinement strategies and multiple API providers</p>
+              <p>Improve your prompts</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

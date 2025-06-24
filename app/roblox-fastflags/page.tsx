@@ -533,7 +533,7 @@ export default function RobloxFastFlags() {
             transition={{ delay: 0.2 }}
             className="text-lg text-muted-foreground max-w-2xl mx-auto"
           >
-            Create, edit, and manage Roblox FastFlag JSON files with advanced validation and preset management.
+            sybau, just do it gooner.
           </motion.p>
         </motion.div>
 

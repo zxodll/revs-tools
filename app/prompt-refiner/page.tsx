@@ -383,8 +383,7 @@ export default function PromptRefinerPage() {
               transition={{ delay: 0.2 }}
               className="text-lg text-muted-foreground max-w-2xl mx-auto"
             >
-              Transform your prompts with AI-powered refinement and enhancement. Make them clearer, more effective, and
-              perfectly tailored for your needs.
+              ref, do something.
             </motion.p>
           </div>
 
