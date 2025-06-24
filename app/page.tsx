@@ -88,7 +88,7 @@ export default function Home() {
                       Prompt Refiner
                     </h2>
                     <p className="text-muted-foreground text-center">
-                      Enhance and refine AI prompts using various language models
+                      Enhance and refine your prompts
                     </p>
                   </CardContent>
                 </Card>
