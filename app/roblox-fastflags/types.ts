@@ -6,4 +6,5 @@ export interface PresetFile {
   category: "performance" | "graphics" | "mobile" | "desktop";
   difficulty: "safe" | "experimental";
   compatibility: string[];
+  version: string;
 }

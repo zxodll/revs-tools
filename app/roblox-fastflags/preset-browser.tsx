@@ -30,6 +30,7 @@ import {
   Smartphone,
   Palette,
   Shield,
+  GitBranch,
 } from "lucide-react"
 import { AdminPanel } from "./admin-panel"
 import { RECOMMENDED_PRESETS } from "./presets"
@@ -45,6 +46,7 @@ export interface FastFlagFile {
   size: number
 }
 
+// Update this interface to include the version
 export interface PresetFile {
   id: string
   title: string
@@ -53,6 +55,7 @@ export interface PresetFile {
   category: "performance" | "graphics" | "mobile" | "desktop"
   difficulty: "safe" | "experimental"
   compatibility: string[]
+  version: string
   createdAt?: string
   updatedAt?: string
 }
@@ -81,7 +84,7 @@ export function PresetBrowser({ isOpen, onClose, onImport, showToast }: PresetBr
   const [showPresetDetails, setShowPresetDetails] = useState(false)
   const [showAdminPanel, setShowAdminPanel] = useState(false)
 
-  // Preset management state - now loads from the presets directory
+  // NOTE: Ensure your RECOMMENDED_PRESETS in './presets.ts' now include a `version` string for each object.
   const [presets, setPresets] = useState<PresetFile[]>(RECOMMENDED_PRESETS)
 
   // Filter presets based on search term, category, and difficulty
@@ -133,24 +136,8 @@ export function PresetBrowser({ isOpen, onClose, onImport, showToast }: PresetBr
   // Handle preset import
   const handleImportPreset = () => {
     if (selectedPreset) {
-      // Convert PresetFile to CommunityFile format for compatibility
-      const communityFile = {
-        id: selectedPreset.id,
-        title: selectedPreset.title,
-        description: selectedPreset.description,
-        content: selectedPreset.content,
-        createdAt: selectedPreset.createdAt || new Date().toISOString(),
-        updatedAt: selectedPreset.updatedAt || new Date().toISOString(),
-        version: 1,
-        downloads: 0,
-        flags: 0,
-        status: "approved" as const,
-        category: selectedPreset.category,
-        difficulty: selectedPreset.difficulty,
-        compatibility: selectedPreset.compatibility,
-      }
-
-      onImport(communityFile)
+      // Pass the full selectedPreset object, which now matches the onImport type
+      onImport(selectedPreset)
       setShowPresetDetails(false)
       setSelectedPreset(null)
     }
@@ -366,6 +353,12 @@ export function PresetBrowser({ isOpen, onClose, onImport, showToast }: PresetBr
                                 <Badge variant="outline" className={`text-xs ${getDifficultyColor(preset.difficulty)}`}>
                                   {preset.difficulty}
                                 </Badge>
+                                {preset.version && (
+                                  <Badge variant="secondary" className="text-xs flex items-center gap-1">
+                                    <GitBranch className="h-3 w-3" />
+                                    v{preset.version}
+                                  </Badge>
+                                )}
                               </div>
 
                               <div className="space-y-2">
@@ -433,6 +426,12 @@ export function PresetBrowser({ isOpen, onClose, onImport, showToast }: PresetBr
                   <Badge variant="outline" className={getDifficultyColor(selectedPreset.difficulty)}>
                     {selectedPreset.difficulty}
                   </Badge>
+                  {selectedPreset.version && (
+                    <Badge variant="secondary" className="text-base flex items-center gap-1">
+                      <GitBranch className="h-3 w-3" />
+                      v{selectedPreset.version}
+                    </Badge>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -487,9 +486,11 @@ export function PresetBrowser({ isOpen, onClose, onImport, showToast }: PresetBr
 
                   <Card>
                     <CardContent className="p-4">
-                      <pre className="text-xs overflow-auto max-h-64 font-mono bg-muted/30 p-3 rounded-md">
+                      {/* --- START OF FIX --- */}
+                      <pre className="text-xs overflow-auto max-h-64 font-mono bg-muted/30 p-3 rounded-md whitespace-pre-wrap break-words">
                         {selectedPreset.content}
                       </pre>
+                      {/* --- END OF FIX --- */}
                     </CardContent>
                   </Card>
                 </div>

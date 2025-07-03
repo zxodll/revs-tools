@@ -3,7 +3,7 @@ import { PresetFile } from "../types";
 export const preset10: PresetFile = {
   id: "preset-10",
     title: "Rev's Experimental",
-    description: "Roblox's new FPS system. (change ur hardware settings)",
+    description: "not stable + outdated. (change ur hardware settings)",
     content: JSON.stringify(
       {
         "DFFlagPolicyServiceReportDetailIsNotSubjectToChinaPolicies": "False",
@@ -293,4 +293,5 @@ export const preset10: PresetFile = {
     category: "performance",
     difficulty: "experimental",
     compatibility: ["Roblox"],
+    version: "1.0",
 };
